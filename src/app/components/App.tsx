@@ -1,18 +1,60 @@
-import React from 'react';
-import logo from '../assets/logo.svg';
+import React, { useState } from 'react';
 import '../styles/ui.css';
+import 'react-figma-plugin-ds/figma-plugin-ds.css';
+import { Button, Input, Label, Text, Title } from 'react-figma-plugin-ds';
+import { ComponentGroup, PSMessage, PSMessage_Component } from '../../models/Messages';
+import { RandomGen } from '../utils/Random';
 
 function App() {
-  const textbox = React.useRef<HTMLInputElement>(undefined);
-
-  const countRef = React.useCallback((element: HTMLInputElement) => {
-    if (element) element.value = '5';
-    textbox.current = element;
-  }, []);
+  const [variantMsg, setVariantMsg] = useState();
 
   const onCreate = () => {
-    const count = parseInt(textbox.current.value, 10);
-    parent.postMessage({ pluginMessage: { type: 'create-rectangles', count } }, '*');
+    let data: ComponentGroup = [
+      {
+        group: 'Text',
+        items: [
+          {
+            ['Kind']: 'Secondary',
+            ['Text#2:16']: new RandomGen(12).randWord(),
+          },
+          {
+            ['Kind']: 'Secondary',
+            ['Text#2:16']: new RandomGen(12).randWord(),
+          },
+          {
+            ['Text#2:16']: new RandomGen(12).randWord(),
+          },
+          {
+            ['Text#2:16']: new RandomGen(12).randWord(),
+          },
+          {
+            ['Text#2:16']: new RandomGen(12).randSentence(),
+          },
+        ],
+      },
+      {
+        group: 'Kind',
+        items: [
+          {
+            ['Kind']: 'Secondary',
+            ['Text#2:16']: new RandomGen(12).randWord(),
+          },
+          {
+            ['Kind']: 'Secondary',
+            ['Text#2:16']: new RandomGen(12).randWord(),
+          },
+        ],
+      },
+    ];
+    parent.postMessage(
+      {
+        pluginMessage: {
+          type: 'create-group',
+          data: data,
+        } satisfies PSMessage_Component,
+      },
+      '*'
+    );
   };
 
   const onCancel = () => {
@@ -22,24 +64,37 @@ function App() {
   React.useEffect(() => {
     // This is how we read messages sent from the plugin controller
     window.onmessage = (event) => {
-      const { type, message } = event.data.pluginMessage;
-      if (type === 'create-rectangles') {
-        console.log(`Figma Says: ${message}`);
+      const { type, data } = event.data.pluginMessage as PSMessage;
+      console.log('received msg1!', type);
+      switch (type) {
+        case 'complete':
+          console.log(`Figma Says: ${data}`);
+          break;
+        case 'properties-list':
+          setVariantMsg(data);
+          console.log('received msg!');
+          break;
       }
     };
   }, []);
 
   return (
     <div>
-      <img src={logo} />
-      <h2>Rectangle Creator</h2>
-      <p>
-        Count: <input ref={countRef} />
-      </p>
-      <button id="create" onClick={onCreate}>
-        Create
-      </button>
-      <button onClick={onCancel}>Cancel</button>
+      <Title level="h1" size="xlarge" weight="bold">
+        The Powerset
+      </Title>
+      <Label>Variations:</Label>
+      <Input
+        onChange={(val) => {
+          console.log(val);
+        }}
+        placeholder={'0'}
+      />
+      <Text>{variantMsg ? JSON.stringify(variantMsg) : 'No Variant Selected'}</Text>
+      <Button onClick={onCreate}>Create</Button>
+      <Button isSecondary onClick={onCancel}>
+        Cancel
+      </Button>
     </div>
   );
 }

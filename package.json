@@ -9,8 +9,10 @@
     "prettier:format": "prettier --write '**/*.{js,jsx,ts,tsx,css,json}' "
   },
   "dependencies": {
+    "lorem-ipsum": "^2.0.8",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-figma-plugin-ds": "^2.3.0"
   },
   "devDependencies": {
     "@figma/plugin-typings": "^1.69.0",
