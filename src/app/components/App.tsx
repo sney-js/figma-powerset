@@ -4,9 +4,10 @@ import 'react-figma-plugin-ds/figma-plugin-ds.css';
 import { Button, Input, Label, Text, Title } from 'react-figma-plugin-ds';
 import { ComponentGroup, PSMessage, PSMessage_Component } from '../../models/Messages';
 import { RandomGen } from '../utils/Random';
+import { VariantDefinitions } from './VariantDefinitions';
 
 function App() {
-  const [variantMsg, setVariantMsg] = useState();
+  const [variantDefinitions, setVariantDefinitions] = useState<ComponentPropertyDefinitions>();
 
   const onCreate = () => {
     let data: ComponentGroup = [
@@ -71,30 +72,30 @@ function App() {
           console.log(`Figma Says: ${data}`);
           break;
         case 'properties-list':
-          setVariantMsg(data);
-          console.log('received msg!');
+          console.log(data, 'data');
+          setVariantDefinitions(data);
           break;
       }
     };
   }, []);
 
   return (
-    <div>
+    <div className={'container'}>
       <Title level="h1" size="xlarge" weight="bold">
         The Powerset
       </Title>
-      <Label>Variations:</Label>
-      <Input
-        onChange={(val) => {
-          console.log(val);
-        }}
-        placeholder={'0'}
-      />
-      <Text>{variantMsg ? JSON.stringify(variantMsg) : 'No Variant Selected'}</Text>
-      <Button onClick={onCreate}>Create</Button>
-      <Button isSecondary onClick={onCancel}>
-        Cancel
-      </Button>
+      <VariantDefinitions definitions={variantDefinitions} />
+      <div className={'sticky'}>
+        <div className={'flex-between'}>
+          <div className={'flex-grow'}>
+          <Text>Total Variations: 56</Text>
+          </div>
+          <Button onClick={onCreate}>Create</Button>
+          <Button isSecondary onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

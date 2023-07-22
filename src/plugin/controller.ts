@@ -1,7 +1,11 @@
 import { getMasterPropertiesDefinition, isComponentOrVariant } from './components';
 import { PSMessage, PSMessage_Component } from '../models/Messages';
 
-figma.showUI(__html__);
+figma.showUI(__html__,
+  {
+    width: 450,
+    height: 700
+  });
 
 function readSelection() {
   const selection = figma.currentPage.selection[0];
@@ -42,8 +46,8 @@ async function layComponentGroup(instanceNode: InstanceNode, data: PSMessage_Com
 
   function getMainFrame(name) {
     const existingFrame = figma.currentPage.findOne((n) => n.name === name);
-    if (existingFrame && existingFrame.type === 'FRAME'){
-      existingFrame.children.map(x=>x.remove());
+    if (existingFrame && existingFrame.type === 'FRAME') {
+      existingFrame.children.map((x) => x.remove());
       return existingFrame;
     }
     let frame = figma.createFrame();
@@ -58,7 +62,7 @@ async function layComponentGroup(instanceNode: InstanceNode, data: PSMessage_Com
     frame.paddingBottom = PAD;
     frame.paddingLeft = PAD;
     frame.paddingRight = PAD;
-    frame.itemSpacing = PAD/2;
+    frame.itemSpacing = PAD / 2;
     return frame;
   }
 
