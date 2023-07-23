@@ -1,4 +1,4 @@
-function getMasterComponent(selection): ComponentSetNode | ComponentNode {
+export function getMasterComponent(selection): ComponentSetNode | ComponentNode {
   if (!selection) return null;
 
   if (selection.type === 'INSTANCE') {
@@ -22,7 +22,6 @@ export function getMasterPropertiesDefinition(selection): ComponentPropertyDefin
 export function isComponentOrVariant(
   selection: SceneNode
 ): selection is FrameNode | ComponentNode | InstanceNode | BooleanOperationNode {
-  return (
-    selection && (selection.type === 'INSTANCE' || selection.type === 'COMPONENT' || selection.type === 'COMPONENT_SET')
-  );
+  // || selection.type === 'COMPONENT' || selection.type === 'COMPONENT_SET';
+  return selection && selection.type === 'INSTANCE';
 }

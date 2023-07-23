@@ -98,13 +98,14 @@ export const powerSet = (list: string[]): string[][] => {
   }
   return set;
 };
+
 /**
  * Given an object with key value pair, returns all possible combinations
  * of keys along with their values
  * @param props : {title:'a', description: 'b'}
  * @returns [{title:'a'}, { description: 'b'}, {title:'a', description: 'b'}]
  */
-export const generatePropCombinations = (props: { [key: string]: any }): { [p: string]: any }[] => {
+export const generatePropCombinations = (props: Record<string, any>): Record<string, any>[] => {
   let extraKeys: string[] = [];
   const transformedKeys = Object.keys(props)
     .map((key) => {
@@ -132,7 +133,7 @@ export const generatePropCombinations = (props: { [key: string]: any }): { [p: s
     })
   );
 
-  const combObj: { [key: string]: any }[] = [];
+  const combObj: Record<string, any>[] = [];
   cleanedPowerSet.forEach((keys) => {
     const obj = {};
     keys.forEach((k) => {

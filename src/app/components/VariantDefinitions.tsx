@@ -1,73 +1,143 @@
-import React, { useMemo } from 'react';
-import { Checkbox, Label, Text } from 'react-figma-plugin-ds';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Checkbox, Text } from 'react-figma-plugin-ds';
+import { generatePropCombinations } from '../utils/Random';
+import { VariantProps, VariantPropsList } from '../../models/Messages';
 
-type VariantDefinitionsParams = { definitions: ComponentPropertyDefinitions };
-type VariantProps = {
-  [key: string]: string[] | boolean[] | VariableAlias[];
+type VariantDefinitionsParams = {
+  definitions: ComponentPropertyDefinitions;
+  onUserSelect: (data: VariantProps[]) => void;
 };
+enum TextHelpers {
+  Words = 'Lorem ipsum dolor sit',
+  Sentence = 'Lorem ipsum dolor sit amet, consectetur adipisici elit.',
+  Paragraph = `Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua. 
+  
+  Gallia est omnis divisa in partes tres, quarum.
+  
+  Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua.`,
+}
+const TextHelperList = [
+  ['Words', 'Lorem ipsum dolor sit'],
+  ['Sentence', 'Lorem ipsum dolor sit amet, consectetur adipisici elit.'],
+  ['Paragraph', `Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua. 
+  
+  Gallia est omnis divisa in partes tres, quarum.
+  
+  Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua.`],
+]
 
-function Table({ properties }: { properties: VariantProps }) {
-  const headers = ['#', 'Name', 'Values'];
+export function VariantDefinitions(props: VariantDefinitionsParams) {
+  const { definitions, onUserSelect } = props;
+
+  const [masterDefinitions, setMasterDefinitions] = useState<VariantPropsList>();
+  const [userDefinitions, setUserDefinitions] = useState<VariantPropsList>();
+
+  useEffect(() => {
+    if (!definitions) return;
+    const varDef = {};
+    Object.keys(definitions).forEach((key) => {
+      const val = definitions[key];
+      switch (val.type) {
+        case 'BOOLEAN':
+          varDef[key] = [true, false];
+          break;
+        case 'TEXT':
+          varDef[key] = [
+            val.defaultValue,
+            TextHelperList[0][1],
+            TextHelperList[1][1],
+            TextHelperList[2][1],
+          ];
+          break;
+        case 'INSTANCE_SWAP':
+          break;
+        case 'VARIANT':
+          varDef[key] = val.variantOptions;
+          break;
+      }
+    });
+    if (JSON.stringify(varDef) !== JSON.stringify(masterDefinitions || {})) {
+      setMasterDefinitions(varDef);
+      const userDefDefault = {};
+      Object.keys(varDef).forEach((key) => {
+        userDefDefault[key] = [varDef[key]?.[0]];
+      });
+      setUserDefinitions(userDefDefault);
+    }
+  }, [definitions]);
+
+  useEffect(() => {
+    if (userDefinitions) {
+      const powerset: Array<VariantProps> = generatePropCombinations(userDefinitions);
+      onUserSelect(powerset);
+    }
+  }, [userDefinitions]);
+
   return (
-    <div className="App">
+    <div>
       <table className={'table'}>
         <thead>
           <tr>
-            {headers.map((name, idx) => (
-              <th key={idx}>
+            {['#', 'Name', 'Values'].map((name, i) => (
+              <th key={name + i}>
                 <Text>{name}</Text>
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {Object.keys(properties).map((key, idx) => (
-            <tr key={idx}>
-              <td>
-                <Text>{idx + 1}.</Text>
-              </td>
-              <td>
-                <Text>{key}</Text>
-              </td>
-              <td>
-                {properties[key].map((val) => (
-                  <Checkbox label={String(val)} name={[key, val].join('.')} defaultValue={true} />
-                ))}
-              </td>
-            </tr>
-          ))}
+          {masterDefinitions &&
+            Object.keys(masterDefinitions).map((propName, i) => (
+              <tr key={propName + i}>
+                <td>
+                  <Text>{i + 1}.</Text>
+                </td>
+                <td>
+                  <Text>{propName.split('#')[0]}</Text>
+                </td>
+                <td>
+                  {masterDefinitions[propName].map((val, j) => {
+                    let defaultChecked = j === 0;
+                    if (userDefinitions) {
+                      defaultChecked = userDefinitions[propName]?.some((x) => x === val);
+                    }
+                    let value = String(val);
+                    if (definitions[propName]?.type === 'TEXT') {
+                      let prettyName = TextHelperList.find(x=>x[1]===value);
+
+                      if (prettyName) {
+                        value = prettyName[0];
+                      } else {
+                        value = `'${value}'`;
+                      }
+                    }
+                    return (
+                      <Checkbox
+                        label={value}
+                        name={[propName, val].join('.')}
+                        defaultValue={defaultChecked}
+                        onChange={(_checked) => {
+                          let newDef = { ...userDefinitions };
+                          let currDefElement: any[] = newDef[propName];
+                          if (currDefElement) {
+                            const set = new Set(currDefElement);
+                            if (_checked) {
+                              set.add(val);
+                            } else {
+                              set.delete(val);
+                            }
+                            newDef[propName] = Array.from(set.values());
+                          }
+                          setUserDefinitions(newDef);
+                        }}
+                      />
+                    );
+                  })}
+                </td>
+              </tr>
+            ))}
         </tbody>
       </table>
-    </div>
-  );
-}
-export function VariantDefinitions(props: VariantDefinitionsParams) {
-  const { definitions = {} } = props;
-  const variantDef: VariantProps = useMemo(() => {
-    if (!definitions) return {};
-    const obj = {};
-    Object.keys(definitions).forEach((key) => {
-      const val = definitions[key];
-      switch (val.type) {
-        case 'BOOLEAN':
-          obj[key] = [true, false];
-          break;
-        case 'TEXT':
-          obj[key] = [val.defaultValue, 'Custom'];
-          break;
-        case 'INSTANCE_SWAP':
-          break;
-        case 'VARIANT':
-          obj[key] = val.variantOptions;
-          break;
-      }
-    });
-    return obj;
-  }, [definitions]);
-  // const powersets = powerSet()
-  return (
-    <div>
-      <Table properties={variantDef} />
     </div>
   );
 }
