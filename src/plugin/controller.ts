@@ -3,18 +3,60 @@ import {
   getMasterPropertiesDefinition,
   isComponentOrVariant,
 } from './components';
-import {PSMessage, PSMessage_Component, PSMessage_Definition, VariantProps} from '../models/Messages';
+import {
+  PSComponentPropertyDefinitions,
+  PSMessage,
+  PSMessage_Component,
+  PSMessage_Definition,
+  VariantProps,
+} from '../models/Messages';
 
 figma.showUI(__html__, {
   width: 420,
   height: 600,
 });
 
-function readSelection() {
+async function debugTEST(selection: InstanceNode) {
+  let instaNode = selection;
+  let currProperties = instaNode.componentProperties;
+  console.log(currProperties, 'selection.componentPropertyReferences');
+  const obj = {};
+  for (const key in currProperties) {
+    obj[key] = currProperties[key].value;
+  }
+  console.log(obj);
+  const node: ComponentSetNode = await figma.importComponentSetByKeyAsync(
+    '627ef507e246a53265c83ba6caa71a339b300aee'
+  );
+  let TEST1 = {
+    'Header Instance#2:1383': node.id,
+    'Body#2:1407': 'This is a content field',
+    'Title#2:1396': 'Heading Text',
+    'Show Header#2:1372': true,
+    Center: 'False',
+    Size: 'XS',
+  };
+  const template = figma.currentPage.findOne((n) => n.name === 'Template');
+
+  const TEST2 = {
+    'Header Instance#2:1383': '308:3290',
+    'Show Header#2:1372': true,
+    'Title#2:1396': 'Heading Text',
+    'Body#2:1407': 'This is a content field',
+    Center: 'False',
+    Size: 'XS',
+  };
+  const newInsta = instaNode.clone();
+  newInsta.setProperties(TEST1);
+}
+
+async function readSelection() {
   const selection = figma.currentPage.selection[0];
+  console.log(selection?.id, 'selection.id');
   if (isComponentOrVariant(selection)) {
+    // debugTEST(selection as InstanceNode);
     const master = getMasterComponent(selection);
-    let allVariants = getMasterPropertiesDefinition(selection);
+    let allVariants: PSComponentPropertyDefinitions = await getMasterPropertiesDefinition(selection);
     console.log(allVariants, 'allVariants');
     // selectAndView([masterComponent]);
     figma.ui.postMessage({
@@ -104,7 +146,6 @@ async function layComponentGroup(instanceNode: InstanceNode, data: PSMessage_Com
   }
   return nodes;
 }
-
 
 figma.ui.onmessage = async (message: PSMessage) => {
   if (message.type === 'create-group') {
