@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Checkbox, Text } from 'react-figma-plugin-ds';
+import { Checkbox, Label, Text } from 'react-figma-plugin-ds';
 import { generatePropCombinations } from '../utils/Random';
 import { VariantProps, VariantPropsList } from '../../models/Messages';
 
@@ -7,24 +7,18 @@ type VariantDefinitionsParams = {
   definitions: ComponentPropertyDefinitions;
   onUserSelect: (data: VariantProps[]) => void;
 };
-enum TextHelpers {
-  Words = 'Lorem ipsum dolor sit',
-  Sentence = 'Lorem ipsum dolor sit amet, consectetur adipisici elit.',
-  Paragraph = `Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua. 
+const TextHelperList = [
+  ['Words', 'Lorem ipsum dolor sit'],
+  ['Sentence', 'Lorem ipsum dolor sit amet, consectetur adipisici elit.'],
+  [
+    'Paragraph',
+    `Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua. 
   
   Gallia est omnis divisa in partes tres, quarum.
   
   Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua.`,
-}
-const TextHelperList = [
-  ['Words', 'Lorem ipsum dolor sit'],
-  ['Sentence', 'Lorem ipsum dolor sit amet, consectetur adipisici elit.'],
-  ['Paragraph', `Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua. 
-  
-  Gallia est omnis divisa in partes tres, quarum.
-  
-  Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua.`],
-]
+  ],
+];
 
 export function VariantDefinitions(props: VariantDefinitionsParams) {
   const { definitions, onUserSelect } = props;
@@ -78,11 +72,15 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
       <table className={'table'}>
         <thead>
           <tr>
-            {['#', 'Name', 'Values'].map((name, i) => (
-              <th key={name + i}>
-                <Text>{name}</Text>
-              </th>
-            ))}
+            <th style={{ width: '30px' }}>
+              <Label>#</Label>
+            </th>
+            <th style={{ width: '100px' }}>
+              <Label>Properties</Label>
+            </th>
+            <th>
+              <Label>Values</Label>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -90,29 +88,36 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
             Object.keys(masterDefinitions).map((propName, i) => (
               <tr key={propName + i}>
                 <td>
-                  <Text>{i + 1}.</Text>
+                  <Label>{i + 1}.</Label>
                 </td>
                 <td>
-                  <Text>{propName.split('#')[0]}</Text>
+                  <Text className={'pl-xxsmall'}>
+                    {propName.split('#')[0]}
+                  </Text>
                 </td>
                 <td>
                   {masterDefinitions[propName].map((val, j) => {
+                    let classes = [];
                     let defaultChecked = j === 0;
                     if (userDefinitions) {
                       defaultChecked = userDefinitions[propName]?.some((x) => x === val);
                     }
                     let value = String(val);
                     if (definitions[propName]?.type === 'TEXT') {
-                      let prettyName = TextHelperList.find(x=>x[1]===value);
+                      let prettyName = TextHelperList.find((x) => x[1] === value);
 
                       if (prettyName) {
-                        value = prettyName[0];
+                        value = prettyName[0]+'*';
+                        classes.push('italics');
                       } else {
                         value = `'${value}'`;
                       }
+                      classes = classes.filter(Boolean);
                     }
                     return (
                       <Checkbox
+                        className={classes.join(' ')}
+                        data-tooltip={'asd'}
                         label={value}
                         name={[propName, val].join('.')}
                         defaultValue={defaultChecked}
@@ -121,11 +126,8 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
                           let currDefElement: any[] = newDef[propName];
                           if (currDefElement) {
                             const set = new Set(currDefElement);
-                            if (_checked) {
-                              set.add(val);
-                            } else {
-                              set.delete(val);
-                            }
+                            if (_checked) set.add(val);
+                            else set.delete(val);
                             newDef[propName] = Array.from(set.values());
                           }
                           setUserDefinitions(newDef);

@@ -6,8 +6,8 @@ import {
 import {PSMessage, PSMessage_Component, PSMessage_Definition, VariantProps} from '../models/Messages';
 
 figma.showUI(__html__, {
-  width: 450,
-  height: 700,
+  width: 420,
+  height: 600,
 });
 
 function readSelection() {

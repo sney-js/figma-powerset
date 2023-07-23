@@ -1,6 +1,8 @@
 body {
-  --grey-05: #eeeeee;
-  --grey-10: #e1e1e1;
+  --grey-05: #f9f9f9;
+  --grey-10: #eeeeee;
+  --grey-20: #e1e1e1;
+  --grey-60: #777777;
   --sp-xs: 0.5rem;
   --sp-s: 0.75rem;
   --sp-base: 1rem;
@@ -15,15 +17,15 @@ body {
 
 /*------------------------------*/
 .table {
-  width:100%;
-  border:1px solid var(--grey-10);
+  width: 100%;
   border-collapse: collapse;
-
+  border: none;
 }
 .table thead {
-  width:100%;
+  width: 100%;
   padding: 0.5rem;
   font-weight: normal;
+  text-align: left;
 }
 
 .table tr {
@@ -32,12 +34,14 @@ body {
 }
 
 .table tbody tr:nth-of-type(odd) {
-   background: var(--grey-05);
-
+  background: var(--grey-05);
 }
 .table td {
-  border: 1px solid var(--grey-05);
-  padding: 0 var(--sp-xs);
+  border: 1px solid var(--grey-10);
+  /*padding: 0 var(--sp-xs);*/
+}
+.table th {
+  border: 1px solid var(--grey-10);
 }
 
 /*------------------------------*/
@@ -57,4 +61,54 @@ body {
   align-items: center;
   gap: var(--sp-xs);
   justify-content: flex-start;
+}
+
+.ellipsis {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  width: 100%;
+}
+
+[data-tooltip] {
+  position: relative;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+[data-tooltip]::before {
+  background: var(--grey-05);
+  border: 1px solid var(--grey-10);
+  bottom: 3em;
+  color: black;
+  content: attr(data-tooltip);
+  display: inline-block;
+  font-size: 1em;
+  letter-spacing: 0.1px;
+  max-width: 50ch;
+  min-width: 40ch;
+  opacity: 0;
+  overflow: hidden;
+  padding: 1em;
+  pointer-events: none;
+  position: absolute;
+  text-indent: 0;
+  transition: 0.1s;
+}
+
+[data-tooltip]:hover::before {
+  opacity: 1;
+}
+
+/*---------------------*/
+
+.checkbox__label:before{
+  min-width: 10px;
+}
+
+.italics{
+  font-style: italic;
+}
+
+.color--grey-60{
+  color: var(--grey-60);
 }
