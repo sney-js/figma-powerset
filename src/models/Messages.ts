@@ -1,4 +1,9 @@
-export type PluginMessages = 'create-group' | 'properties-list' | 'complete';
+export type PluginMessages =
+  | 'create-group'
+  | 'properties-list'
+  | 'complete'
+  | 'target'
+  | 'lock-prev-selection';
 
 export type PSMessage = {
   type: PluginMessages;
@@ -9,12 +14,12 @@ export type PSMessage = {
 export type PSInstanceSwapPreferredValue = {
   name: string;
   id: string;
-}
+};
 
 export type PSComponentPropertyDefinitions = {
   [propertyName: string]: {
-    instanceData?: PSInstanceSwapPreferredValue[]
-  }
+    instanceData?: PSInstanceSwapPreferredValue[];
+  };
 } & ComponentPropertyDefinitions;
 
 export type VariantOptionType = string | boolean;
@@ -29,15 +34,24 @@ export type ComponentGroup = Array<{
   items: Array<VariantProps>;
 }>;
 
-export type PSMessage_Component = {
+export type PSMessage_Create = {
   type: 'create-group';
   data: ComponentGroup;
+};
+
+export type PSMessage_Lock = {
+  type: 'lock-prev-selection';
+  data: {
+    lock: boolean;
+  };
 };
 
 export type PSMessage_Definition = {
   type: 'properties-list';
   data: {
-    name: string;
-    variants: ComponentPropertyDefinitions
+    name: string | null;
+    id: string | null;
+    isVariant: boolean;
+    variants: ComponentPropertyDefinitions;
   };
 };

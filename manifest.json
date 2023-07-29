@@ -1,6 +1,6 @@
 {
-  "name": "The Powerset",
-  "id": "asdjhg120",
+  "name": "Powerset",
+  "id": "sne-powerset",
   "api": "1.0.0",
   "main": "dist/code.js",
   "ui": "dist/ui.html",
