@@ -43,7 +43,7 @@ function App() {
 
   useEffect(() => {
     sendPluginMessage({
-      type: 'lock-prev-selection',
+      type: 'lock-selection',
       data: {
         lock: lockSelection,
       },
@@ -57,7 +57,7 @@ function App() {
         <div className={'flex-between border-bottom-grey-10 pl-xxsmall pr-xsmall'}>
           <Title level="h1" size="xlarge" weight="bold">
             {variantSelection.isVariant ? `◇ ` : ''}
-            {variantSelection.name}
+            {variantSelection.name?.replace(/(.{30})..+/, "$1…")}
           </Title>
           <div className={'flex gap-1'}>
             <Icon
@@ -92,19 +92,27 @@ function App() {
       )}
       <div style={cssVars({ '--line-height': '1.5' })} className={'mb-xsmall'}>
         <Disclosure label="How does it work?" isSection>
-          Powerset calculates every possible combination of a component based on the properties it
-          has and their options.
+          Powerset calculates and renders every possible combination of a component based on its
+          properties and your selections.
           <br />
+          <Text weight={'bold'}>Select an instance of a component within any page.</Text>
+          Then use the checkboxes below to select the desired values for each additional variation
+          combination. Powerset will render all permutations of the properties and their values in a
+          new frame.
           <br />
-          Select an instance of a component within any page. Then use the checkboxes below to select
-          the desired values for additional component variations. Powerset will render all
-          permutations of the properties and their values in a new frame.
-          <br />
-          <br />A new frame is created with name 'Powerset-$ComponentName'. This will be updated
-          every time the plugin is run. Any changes to the dimensions of this frame will be
-          maintained.
-          <br />
-          <br />* – extra example values provided by this plugin for you to try.
+          <ul>
+            <li>
+              <b>FrameName</b> – The new frame is created with name 'Powerset/$ComponentName'. This
+              will be updated for each component set every time the plugin is run. Any changes to
+              the properties of this frame will be maintained. Feel free to rename the frame for new
+              frames.
+            </li>
+            <br />
+            <li>
+              <b>Lock</b> – Every time you select a node, this plugin will recalculate its variance
+              permutations. Toggle the lock icon to allow you to play with the locked selection.
+            </li>
+          </ul>
         </Disclosure>
       </div>
       <VariantDefinitions
