@@ -15,7 +15,8 @@ export function getMasterComponent(selection): ComponentSetNode | ComponentNode 
 }
 
 export async function getMasterPropertiesDefinition(
-  selection: InstanceNode
+  selection: InstanceNode,
+  asyncComponentFetch: boolean
 ): Promise<PSComponentPropertyDefinitions> {
   if (!selection) return null;
 
@@ -50,23 +51,28 @@ export async function getMasterPropertiesDefinition(
               ? figma.importComponentSetByKeyAsync
               : figma.importComponentByKeyAsync;
 
-          await compFetchFunc(pref.key)
-            .then(({ id, name }) => {
-              compPropDef[prop].instanceData.push({
-                name: name,
-                id: id,
+          if (asyncComponentFetch) {
+            await compFetchFunc(pref.key)
+              .then(({ id, name }) => {
+                compPropDef[prop].instanceData.push({
+                  name: name,
+                  id: id,
+                });
+              })
+              .catch((e: Error) => {
+                console.error(e);
               });
-            })
-            .catch(console.error);
+          }
         }
 
-        if (!compPropDef[prop].instanceData.some((x) => x.id === prefInstanceId)) {
+        if (!compPropDef[prop].instanceData.some(({ id }) => id === prefInstanceId)) {
           const prevInstanceNode = getMasterComponent(figma.getNodeById(prefInstanceId))?.name;
           compPropDef[prop].instanceData.push({
             name: prevInstanceNode || 'Current',
             id: prefInstanceId,
           });
         }
+
         break;
       }
     }

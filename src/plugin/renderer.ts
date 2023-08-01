@@ -1,6 +1,8 @@
 import { PSMessage_Create, VariantProps } from '../models/Messages';
 import { getMasterComponent } from './components';
 
+const POWERSET_FRAME_PREFIX = 'Powerset/';
+
 async function makeText(text: string) {
   const groupText = figma.createText();
   await figma.loadFontAsync(groupText.fontName as FontName);
@@ -13,6 +15,7 @@ export async function layComponentGroup(
   instanceNode: InstanceNode,
   data: PSMessage_Create['data']
 ) {
+  figma.commitUndo();
   const nodes = [];
 
   function getMainFrame(name) {
@@ -38,12 +41,11 @@ export async function layComponentGroup(
   }
 
   const masterComp = getMasterComponent(instanceNode);
-  const mainFrame = getMainFrame('Powerset/' + masterComp.name);
+  const mainFrame = getMainFrame(POWERSET_FRAME_PREFIX + masterComp.name);
   nodes.push(mainFrame);
 
   let i = 0;
   for (const { group, items } of data) {
-    console.log(group, 'group', data);
     const groupText = await makeText(group);
     mainFrame.insertChild(i++, groupText);
     groupText.layoutSizingHorizontal = 'HUG';
@@ -59,11 +61,28 @@ export async function layComponentGroup(
     groupFrame.backgrounds = [];
     groupFrame.counterAxisSpacing = 32;
 
+    let createdInstances = 0;
     items.forEach((instanceProperties: VariantProps, j) => {
-      let newVariant: InstanceNode = instanceNode.clone();
-      newVariant.setProperties(instanceProperties);
-      groupFrame.insertChild(j, newVariant);
+      const newVariant: InstanceNode = instanceNode.clone();
+      try {
+        newVariant.setProperties(instanceProperties);
+        groupFrame.insertChild(j, newVariant);
+        createdInstances++;
+      } catch (e) {
+        newVariant.remove();
+      }
     });
+
+    if (createdInstances) {
+      const errored = items.length - createdInstances;
+      figma.notify(
+        [
+          `Created ${createdInstances} instances!`,
+          errored ? ` Error creating ${errored} instances.` : '',
+        ].join('')
+      );
+    }
   }
+  figma.commitUndo();
   return nodes;
 }

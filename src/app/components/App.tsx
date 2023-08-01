@@ -57,7 +57,7 @@ function App() {
         <div className={'flex-between border-bottom-grey-10 pl-xxsmall pr-xsmall'}>
           <Title level="h1" size="xlarge" weight="bold">
             {variantSelection.isVariant ? `◇ ` : ''}
-            {variantSelection.name?.replace(/(.{30})..+/, "$1…")}
+            {variantSelection.name?.replace(/(.{30})..+/, '$1…')}
           </Title>
           <div className={'flex gap-1'}>
             <Icon
@@ -118,6 +118,7 @@ function App() {
       <VariantDefinitions
         key={'table-' + variantSelection.id}
         definitions={variantSelection.variants}
+        selectionData={{ name: variantSelection.name, id: variantSelection.id }}
         onUserSelect={(data) => setPowerset(data)}
       />
       <div className={'sticky p-xxsmall pl-xsmall pr-xsmall bottom-0 border-top-grey-10'}>

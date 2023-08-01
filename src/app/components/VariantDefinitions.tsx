@@ -9,6 +9,7 @@ import {
 
 type VariantDefinitionsParams = {
   definitions: PSComponentPropertyDefinitions;
+  selectionData: { name: string; id: string };
   onUserSelect: (powerset: VariantProps[]) => void;
 };
 const TextHelperList = [
@@ -25,7 +26,7 @@ const TextHelperList = [
 ];
 
 export function VariantDefinitions(props: VariantDefinitionsParams) {
-  const { definitions, onUserSelect } = props;
+  const { definitions, selectionData, onUserSelect } = props;
 
   const [masterDefinitions, setMasterDefinitions] = useState<VariantDefPropsList>();
   const [userDefinitions, setUserDefinitions] = useState<VariantDefPropsList>();
@@ -126,14 +127,14 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
                       classes = classes.filter(Boolean);
                       break;
                     case 'INSTANCE_SWAP':
-                      label = '◇ ' + masterDefValue.instanceData[j].name;
+                      label = '◇ ' + masterDefValue.instanceData[j]?.name;
                       break;
                   }
                   return (
                     <Checkbox
                       className={classes.join(' ')}
                       label={label}
-                      key={propName + Math.random()}
+                      key={[propName, val, selectionData.id].join('-')}
                       name={[propName, val].join('.')}
                       defaultValue={defaultChecked}
                       onChange={(_checked) => {
