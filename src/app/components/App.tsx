@@ -88,25 +88,24 @@ function App() {
       )}
       <div style={cssVars({ '--line-height': '1.5' })} className={'mb-xsmall'}>
         <Disclosure label="How does it work?" isSection>
-          Powerset calculates and renders every possible combination of a component based on its
-          properties and your selections.
+          Powerset renders all permutations of a selected instance based on the values of its variant properties. The created combinations can help you QA your component library definitions, or
+          showcase its permutations.
           <br />
-          <Text weight={'bold'}>Select an instance of a component within any page.</Text>
-          Then use the checkboxes below to select the desired values for each additional variation
-          combination. Powerset will render all permutations of the properties and their values in a
-          new frame.
           <br />
-          <ul>
+          To start, select an instance of a component. Then use the checkboxes on the generated
+          properties table to select all the desired values for each new variation combination.
+          <br />
+          <ul className={'pl-xsmall'}>
             <li>
-              <b>FrameName</b> – The new frame is created with name 'Powerset/$ComponentName'. This
-              will be updated for each component set every time the plugin is run. Any changes to
-              the properties of this frame will be maintained. Feel free to rename the frame for new
-              frames.
+              <b>FrameName</b> – A new frame is created with name 'Powerset/$LayerName'. This will
+              be updated for the same instance every time the plugin is run. Any changes to the
+              auto-layout properties of this frame will be maintained on each run. Feel free to
+              rename the frame to create new frames on next run.
             </li>
             <br />
             <li>
-              <b>Lock</b> – Every time you select a node, this plugin will recalculate its variance
-              permutations. Toggle the lock icon to allow you to play with the locked selection.
+              <b>Lock</b> – Every time you select an instance, this plugin will regenerate its properties
+              table. Toggle the lock icon to lock the properties table on the selected instance.
             </li>
           </ul>
         </Disclosure>
@@ -127,7 +126,7 @@ function App() {
             onClick={() => {
               const pluginMessage: PSMessage_Create = {
                 type: 'create-group',
-                data: [{ group: 'Text', items: powerset }],
+                data: [{ group: variantSelection.name, items: powerset }],
               };
               sendPluginMessage(pluginMessage);
             }}
