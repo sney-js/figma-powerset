@@ -131,7 +131,7 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
                         break;
                       case 'INSTANCE_SWAP':
                         label = '◇ ' + masterDefValue.instanceData[j]?.name;
-                        instanceID = masterDefValue.instanceData[j]?.id;
+                        // instanceID = masterDefValue.instanceData[j]?.id;
                         break;
                     }
 

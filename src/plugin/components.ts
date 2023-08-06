@@ -35,14 +35,14 @@ export async function getMasterPropertiesDefinition(
   for (const prop of sortedProps) {
     compPropDef[prop] = masterDef[prop];
 
-    const instancePropValue = currentDefinitions[prop].value;
-    if (instancePropValue) {
-      compPropDef[prop].defaultValue = instancePropValue;
+    const propValue = currentDefinitions[prop].value;
+    if (propValue) {
+      compPropDef[prop].defaultValue = propValue;
     }
 
     switch (compPropDef[prop].type) {
       case 'INSTANCE_SWAP': {
-        const prefInstanceId = instancePropValue as string;
+        const prefInstanceId = propValue as string;
         compPropDef[prop].instanceData = [];
 
         for (const pref of compPropDef[prop].preferredValues) {
@@ -60,16 +60,14 @@ export async function getMasterPropertiesDefinition(
                 }
                 compPropDef[prop].instanceData.push({ name, id });
               })
-              .catch((e: Error) => {
-                console.error(e);
-              });
+              .catch(console.error);
           }
         }
 
         if (!compPropDef[prop].instanceData.some(({ id }) => id === prefInstanceId)) {
           const prevInstanceNode = getMasterComponent(figma.getNodeById(prefInstanceId))?.name;
           compPropDef[prop].instanceData.push({
-            name: prevInstanceNode || 'Current',
+            name: prevInstanceNode + ' (Current)',
             id: prefInstanceId,
           });
         }

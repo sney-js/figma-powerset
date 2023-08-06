@@ -17,7 +17,6 @@ const sendPluginMessage = (pluginMessage: PSMessage) => {
 async function readSelection() {
   if (lockSelection) return;
   const selection = figma.currentPage.selection[0];
-  console.log(selection?.id, 'selection.id');
 
   if (isInstance(selection)) {
     const master = getMasterComponent(selection satisfies InstanceNode);
@@ -38,7 +37,7 @@ async function readSelection() {
     sendVariantsDataToPlugin(allVariants);
     lastInstance = selection;
     getMasterPropertiesDefinition(selection, true).then((data) => {
-      console.log(data, 'allVariants');
+      // console.log(data, 'allVariants');
       sendVariantsDataToPlugin(data);
     });
   } else {
@@ -52,7 +51,6 @@ async function readSelection() {
         variants: null,
       },
     } satisfies PSMessage_Definition);
-    console.log('Not an instance');
   }
 }
 
