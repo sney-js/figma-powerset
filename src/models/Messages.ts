@@ -3,6 +3,7 @@ export type PluginMessages =
   | 'properties-list'
   | 'complete'
   | 'target'
+  | 'focus-id'
   | 'lock-selection';
 
 export type PSMessage = {
