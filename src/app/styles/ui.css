@@ -1,5 +1,60 @@
 body {
+  --grey-05: #eeeeee;
+  --grey-10: #e1e1e1;
+  --sp-xs: 0.5rem;
+  --sp-s: 0.75rem;
+  --sp-base: 1rem;
   /*font: 12px sans-serif;*/
   /*text-align: center;*/
-  margin: 20px;
+}
+
+.container {
+  padding: var(--sp-base);
+  padding-bottom: 5rem;
+}
+
+/*------------------------------*/
+.table {
+  width:100%;
+  border:1px solid var(--grey-10);
+  border-collapse: collapse;
+
+}
+.table thead {
+  width:100%;
+  padding: 0.5rem;
+  font-weight: normal;
+}
+
+.table tr {
+  width: 100%;
+  padding: var(--sp-xs) 0;
+}
+
+.table tbody tr:nth-of-type(odd) {
+   background: var(--grey-05);
+
+}
+.table td {
+  border: 1px solid var(--grey-05);
+  padding: 0 var(--sp-xs);
+}
+
+/*------------------------------*/
+
+.sticky {
+  position: fixed;
+  z-index: 100;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: white;
+  padding: var(--sp-s);
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  justify-content: flex-start;
 }
