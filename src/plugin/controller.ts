@@ -1,26 +1,36 @@
-import { getMasterPropertiesDefinition, isComponentOrVariant } from './components';
-import { PSMessage, PSMessage_Component } from '../models/Messages';
+import {
+  getMasterComponent,
+  getMasterPropertiesDefinition,
+  isComponentOrVariant,
+} from './components';
+import {PSMessage, PSMessage_Component, PSMessage_Definition, VariantProps} from '../models/Messages';
 
-figma.showUI(__html__,
-  {
-    width: 450,
-    height: 700
-  });
+figma.showUI(__html__, {
+  width: 450,
+  height: 700,
+});
 
 function readSelection() {
   const selection = figma.currentPage.selection[0];
   if (isComponentOrVariant(selection)) {
+    const master = getMasterComponent(selection);
     let allVariants = getMasterPropertiesDefinition(selection);
     console.log(allVariants, 'allVariants');
     // selectAndView([masterComponent]);
     figma.ui.postMessage({
       type: 'properties-list',
-      data: allVariants,
-    });
+      data: {
+        name: master.name,
+        variants: allVariants,
+      },
+    } satisfies PSMessage_Definition);
   } else {
     figma.ui.postMessage({
       type: 'properties-list',
-      data: null,
+      data: {
+        name: selection?.name || 'None',
+        variants: null,
+      },
     });
     console.log('Not an instance');
   }
@@ -66,7 +76,8 @@ async function layComponentGroup(instanceNode: InstanceNode, data: PSMessage_Com
     return frame;
   }
 
-  const mainFrame = getMainFrame('Powerset-00');
+  const masterComp = getMasterComponent(instanceNode);
+  const mainFrame = getMainFrame('Powerset-' + masterComp.name);
   nodes.push(mainFrame);
 
   let i = 0;
@@ -85,7 +96,7 @@ async function layComponentGroup(instanceNode: InstanceNode, data: PSMessage_Com
     groupFrame.itemSpacing = 32;
     groupFrame.counterAxisSpacing = 32;
 
-    items.forEach((instanceProperties, j) => {
+    items.forEach((instanceProperties: VariantProps, j) => {
       let newVariant: InstanceNode = instanceNode.clone();
       newVariant.setProperties(instanceProperties);
       groupFrame.insertChild(j, newVariant);
@@ -94,13 +105,14 @@ async function layComponentGroup(instanceNode: InstanceNode, data: PSMessage_Com
   return nodes;
 }
 
+
 figma.ui.onmessage = async (message: PSMessage) => {
   if (message.type === 'create-group') {
     const selection = figma.currentPage.selection[0];
     if (selection && selection.type === 'INSTANCE') {
       const data = message.data satisfies PSMessage_Component['data'];
-      await layComponentGroup(selection, data);
-      // selectAndView(nodes);
+      const nodes = await layComponentGroup(selection, data);
+      selectAndView(nodes);
     }
 
     // This is how figma responds back to the ui

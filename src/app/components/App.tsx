@@ -1,50 +1,32 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import '../styles/ui.css';
 import 'react-figma-plugin-ds/figma-plugin-ds.css';
-import { Button, Input, Label, Text, Title } from 'react-figma-plugin-ds';
-import { ComponentGroup, PSMessage, PSMessage_Component } from '../../models/Messages';
-import { RandomGen } from '../utils/Random';
+import { Button, Label, Text, Tip, Title } from 'react-figma-plugin-ds';
+import {
+  ComponentGroup,
+  PSMessage,
+  PSMessage_Component,
+  PSMessage_Definition,
+  VariantOptionType,
+  VariantProps,
+} from '../../models/Messages';
+import { generatePropCombinations, RandomGen } from '../utils/Random';
 import { VariantDefinitions } from './VariantDefinitions';
 
 function App() {
   const [variantDefinitions, setVariantDefinitions] = useState<ComponentPropertyDefinitions>();
+  const [userSettings, setUserSettings] = useState<{ name; isVariant }>({
+    name: 'N/A',
+    isVariant: false,
+  });
+  const [powerset, setPowerset] = useState<Array<VariantProps>>();
 
   const onCreate = () => {
+    console.log(powerset, 'powerset');
     let data: ComponentGroup = [
       {
         group: 'Text',
-        items: [
-          {
-            ['Kind']: 'Secondary',
-            ['Text#2:16']: new RandomGen(12).randWord(),
-          },
-          {
-            ['Kind']: 'Secondary',
-            ['Text#2:16']: new RandomGen(12).randWord(),
-          },
-          {
-            ['Text#2:16']: new RandomGen(12).randWord(),
-          },
-          {
-            ['Text#2:16']: new RandomGen(12).randWord(),
-          },
-          {
-            ['Text#2:16']: new RandomGen(12).randSentence(),
-          },
-        ],
-      },
-      {
-        group: 'Kind',
-        items: [
-          {
-            ['Kind']: 'Secondary',
-            ['Text#2:16']: new RandomGen(12).randWord(),
-          },
-          {
-            ['Kind']: 'Secondary',
-            ['Text#2:16']: new RandomGen(12).randWord(),
-          },
-        ],
+        items: powerset,
       },
     ];
     parent.postMessage(
@@ -62,19 +44,23 @@ function App() {
     parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*');
   };
 
-  React.useEffect(() => {
-    // This is how we read messages sent from the plugin controller
+  useEffect(() => {
     window.onmessage = (event) => {
       const { type, data } = event.data.pluginMessage as PSMessage;
       console.log('received msg1!', type);
       switch (type) {
         case 'complete':
-          console.log(`Figma Says: ${data}`);
           break;
-        case 'properties-list':
-          console.log(data, 'data');
-          setVariantDefinitions(data);
+        case 'properties-list': {
+          const dData = data satisfies PSMessage_Definition['data'];
+          let instanceInfo = { name: dData.name, isVariant: false };
+          if (dData.variants) {
+            instanceInfo.isVariant = true;
+            setVariantDefinitions(dData.variants);
+          }
+          setUserSettings(instanceInfo);
           break;
+        }
       }
     };
   }, []);
@@ -82,22 +68,29 @@ function App() {
   return (
     <div className={'container'}>
       <Title level="h1" size="xlarge" weight="bold">
-        The Powerset
+        {userSettings.name}
       </Title>
-      <VariantDefinitions definitions={variantDefinitions} />
+      <Tip
+        iconColor={userSettings.isVariant ? 'green' : 'red'}
+        iconName={userSettings.isVariant ? 'check' : 'warning'}
+      >
+        {userSettings.isVariant ? 'This is a variant' : 'Please select instance of a component.'}
+      </Tip>
+      <VariantDefinitions
+        definitions={variantDefinitions}
+        onUserSelect={(data) => setPowerset(data)}
+      />
       <div className={'sticky'}>
         <div className={'flex-between'}>
           <div className={'flex-grow'}>
-          <Text>Total Variations: 56</Text>
+            <Text>Total Variations: {powerset?.length || 0}</Text>
           </div>
-          <Button onClick={onCreate}>Create</Button>
-          <Button isSecondary onClick={onCancel}>
-            Cancel
+          <Button isDisabled={!userSettings?.isVariant} onClick={onCreate}>
+            Create
           </Button>
         </div>
       </div>
     </div>
   );
 }
-
 export default App;
