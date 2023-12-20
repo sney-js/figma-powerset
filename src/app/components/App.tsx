@@ -1,17 +1,16 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import '../styles/ui.css';
 import 'react-figma-plugin-ds/figma-plugin-ds.css';
-import { Button, Label, Text, Tip, Title } from 'react-figma-plugin-ds';
+import { Button, Disclosure, Text, Tip, Title } from 'react-figma-plugin-ds';
 import {
   ComponentGroup,
   PSMessage,
   PSMessage_Component,
   PSMessage_Definition,
-  VariantOptionType,
   VariantProps,
 } from '../../models/Messages';
-import { generatePropCombinations, RandomGen } from '../utils/Random';
 import { VariantDefinitions } from './VariantDefinitions';
+import { cssVars } from '../utils/utils';
 
 function App() {
   const [variantDefinitions, setVariantDefinitions] = useState<ComponentPropertyDefinitions>();
@@ -65,17 +64,40 @@ function App() {
     };
   }, []);
 
+  let canCreate: boolean = !(userSettings.isVariant && powerset?.length);
   return (
     <div className={'container'}>
-      <Title level="h1" size="xlarge" weight="bold">
-        {userSettings.name}
-      </Title>
-      <Tip
-        iconColor={userSettings.isVariant ? 'green' : 'red'}
-        iconName={userSettings.isVariant ? 'check' : 'warning'}
-      >
-        {userSettings.isVariant ? 'This is a variant' : 'Please select instance of a component.'}
-      </Tip>
+      {userSettings.isVariant ? (
+        <Title level="h1" size="xlarge" weight="bold">
+          {userSettings.name}
+        </Title>
+      ) : (
+        <Tip className={'mb-xsmall'} iconColor={'red'} iconName={'warning'}>
+          Please select an instance of a component.
+        </Tip>
+      )}
+      {userSettings.isVariant && !powerset?.length && (
+        <Tip className={'mb-xsmall'} iconColor={'yellow'} iconName={'warning'}>
+          This component has no properties.
+        </Tip>
+      )}
+      <div style={cssVars({ '--line-height': '1.5' })} className={'mb-xsmall'}>
+        <Disclosure label="How does it work?" isSection>
+          Powerset calculates every possible combination of a component based on the properties it
+          has and their options.
+          <br />
+          <br />
+          Select an instance of a component within any page. Then use the checkboxes below to select
+          the desired values for additional component variations. Powerset will render all
+          permutations of the properties and their values in a new frame.
+          <br />
+          <br />A new frame is created with name 'Powerset-$ComponentName'. This will be updated
+          every time the plugin is run. Any changes to the dimensions of this frame will be
+          maintained.
+          <br />
+          <br />* – extra example values provided by this plugin for you to try.
+        </Disclosure>
+      </div>
       <VariantDefinitions
         definitions={variantDefinitions}
         onUserSelect={(data) => setPowerset(data)}
@@ -85,8 +107,8 @@ function App() {
           <div className={'flex-grow'}>
             <Text>Total Variations: {powerset?.length || 0}</Text>
           </div>
-          <Button isDisabled={!userSettings?.isVariant} onClick={onCreate}>
-            Create
+          <Button isDisabled={canCreate} onClick={onCreate}>
+            Create Powerset
           </Button>
         </div>
       </div>
