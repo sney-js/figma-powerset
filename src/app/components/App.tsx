@@ -8,8 +8,8 @@ import {
   PSMessage_Definition,
   VariantProps,
 } from '../../models/Messages';
+import { cssVars, sendPluginMessage, truncate } from '../utils/utils';
 import { VariantDefinitions } from './VariantDefinitions';
-import { cssVars, sendPluginMessage } from '../utils/utils';
 
 function App() {
   const [variantSelection, setVariantSelection] = useState<PSMessage_Definition['data']>({
@@ -53,7 +53,7 @@ function App() {
         <div className={'flex-between border-bottom-grey-10 pl-xxsmall pr-xsmall'}>
           <Title level="h1" size="xlarge" weight="bold">
             {variantSelection.isVariant ? `◇ ` : ''}
-            {variantSelection.name?.replace(/(.{30})..+/, '$1…')}
+            {truncate(variantSelection.name)}
           </Title>
           <div className={'flex gap-1'}>
             <Icon
@@ -88,8 +88,9 @@ function App() {
       )}
       <div style={cssVars({ '--line-height': '1.5' })} className={'mb-xsmall'}>
         <Disclosure label="How does it work?" isSection>
-          Powerset renders all permutations of a selected instance based on the values of its variant properties. The created combinations can help you QA your component library definitions, or
-          showcase its permutations.
+          Powerset renders all permutations of a selected instance based on the values of its
+          variant properties. The created combinations can help you QA your component library
+          definitions, or showcase its permutations.
           <br />
           <br />
           To start, select an instance of a component. Then use the checkboxes on the generated
@@ -104,8 +105,9 @@ function App() {
             </li>
             <br />
             <li>
-              <b>Lock</b> – Every time you select an instance, this plugin will regenerate its properties
-              table. Toggle the lock icon to lock the properties table on the selected instance.
+              <b>Lock</b> – Every time you select an instance, this plugin will regenerate its
+              properties table. Toggle the lock icon to lock the properties table on the selected
+              instance.
             </li>
           </ul>
         </Disclosure>
