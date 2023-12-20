@@ -1,18 +1,19 @@
-# Figma Plugin React Template
+# Powerset - Figma Plugin
 
-![62862431-71537f00-bd0e-11e9-85db-d97c0fb729a4](https://user-images.githubusercontent.com/16322616/62862692-46b5f600-bd0f-11e9-93b0-75955d1de8f3.png)
-
-This template contains the react example as shown on [Figma Docs](https://www.figma.com/plugin-docs/intro/), with some structural changes and extra tooling.
+Powerset renders all permutations of a selected instance based on the values of its variant properties. The created combinations can help you QA your component library definitions, or showcase its permutations.
 
 ## Quickstart
 
-- Run `yarn` to install dependencies.
-- Run `yarn build:watch` to start webpack in watch mode.
+- Run `npm i` to install dependencies.
+- Run `npm run build:watch` to start webpack in watch mode.
 - Open `Figma` -> `Plugins` -> `Development` -> `Import plugin from manifest...` and choose `manifest.json` file from this repo.
 
-⭐ To change the UI of your plugin (the react code), start editing [App.tsx](./src/app/components/App.tsx).  
-⭐ To interact with the Figma API edit [controller.ts](./src/plugin/controller.ts).  
-⭐ Read more on the [Figma API Overview](https://www.figma.com/plugin-docs/api/api-overview/).
+## Development
+1. To change the UI of your plugin, edit files within `src/app`.
+    1. Entry point: [App.tsx](./src/app/components/App.tsx). 
+2. To change Messaging and Rendering in Figma, edit files within `src/plugin`.
+    1. Entry point: [controller.ts](./src/plugin/controller.ts).  
+3. Read more on the [Figma API Overview](https://www.figma.com/plugin-docs/api/api-overview/).
 
 ## Toolings
 
