@@ -6,7 +6,7 @@ import {
   VariantDefPropsList,
   VariantProps,
 } from '../../models/Messages';
-import { sendPluginMessage } from '../utils/utils';
+import { sendPluginMessage, truncate } from '../utils/utils';
 
 type VariantDefinitionsParams = {
   definitions: PSComponentPropertyDefinitions;
@@ -126,7 +126,7 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
                           label = prettyName[0] + '...';
                           classes.push('italics');
                         } else {
-                          label = `'${val}'`;
+                          label = `'${truncate(val as string, 27)}'`;
                         }
                         break;
                       case 'INSTANCE_SWAP':
@@ -135,6 +135,7 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
                         break;
                     }
 
+                    label = truncate(label, 29);
                     classes = classes.filter(Boolean);
                     return (
                       <div className={'flex flex-between'}>
