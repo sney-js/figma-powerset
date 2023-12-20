@@ -9,11 +9,7 @@ import {
   VariantProps,
 } from '../../models/Messages';
 import { VariantDefinitions } from './VariantDefinitions';
-import { cssVars } from '../utils/utils';
-
-function sendPluginMessage(pluginMessage: PSMessage) {
-  window.parent.postMessage({ pluginMessage }, '*');
-}
+import { cssVars, sendPluginMessage } from '../utils/utils';
 
 function App() {
   const [variantSelection, setVariantSelection] = useState<PSMessage_Definition['data']>({

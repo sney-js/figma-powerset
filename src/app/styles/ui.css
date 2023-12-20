@@ -2,6 +2,7 @@ body {
   --grey-05: #f9f9f9;
   --grey-10: #eeeeee;
   --grey-20: #e1e1e1;
+  --grey-40: #b6b6b6;
   --grey-60: #777777;
   --sp-xs: 0.5rem;
   --sp-s: 0.75rem;
@@ -137,4 +138,9 @@ hr {
 
 .color--grey-60 {
   color: var(--grey-60);
+}
+
+.l-grid {
+  display: grid;
+  align-items: center;
 }

@@ -95,6 +95,12 @@ const handlePluginMessage = async (message: PSMessage) => {
     case 'target':
       if (lastInstance) selectAndView([lastInstance], true);
       break;
+    case 'focus-id':
+      const foundID = figma.getNodeById(message.data) as SceneNode;
+      if (foundID) {
+        selectAndView([foundID], true);
+      }
+      break;
   }
   // figma.closePlugin();
 };

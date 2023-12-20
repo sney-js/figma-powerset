@@ -53,11 +53,12 @@ export async function getMasterPropertiesDefinition(
 
           if (asyncComponentFetch) {
             await compFetchFunc(pref.key)
-              .then(({ id, name }) => {
-                compPropDef[prop].instanceData.push({
-                  name: name,
-                  id: id,
-                });
+              .then((node: ComponentNode | ComponentSetNode) => {
+                let { id, name } = node;
+                if (node.type === 'COMPONENT_SET') {
+                  id = node.defaultVariant.id;
+                }
+                compPropDef[prop].instanceData.push({ name, id });
               })
               .catch((e: Error) => {
                 console.error(e);
