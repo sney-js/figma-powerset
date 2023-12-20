@@ -66,6 +66,9 @@ export async function layComponentGroup(
       const newVariant: InstanceNode = instanceNode.clone();
       try {
         newVariant.setProperties(instanceProperties);
+        // set twice to reset icon colors perhaps
+        newVariant.resetOverrides();
+        newVariant.setProperties(instanceProperties);
         groupFrame.insertChild(j, newVariant);
         createdInstances++;
       } catch (e) {
