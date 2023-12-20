@@ -41,6 +41,7 @@ export async function getMasterPropertiesDefinition(
 
     switch (compPropDef[prop].type) {
       case 'INSTANCE_SWAP': {
+        const prefInstanceId = instancePropValue as string;
         compPropDef[prop].instanceData = [];
 
         for (const pref of compPropDef[prop].preferredValues) {
@@ -59,10 +60,11 @@ export async function getMasterPropertiesDefinition(
             .catch(console.error);
         }
 
-        if (instancePropValue !== compPropDef[prop].instanceData[0]?.id) {
+        if (!compPropDef[prop].instanceData.some((x) => x.id === prefInstanceId)) {
+          const prevInstanceNode = getMasterComponent(figma.getNodeById(prefInstanceId))?.name;
           compPropDef[prop].instanceData.push({
-            name: 'Current',
-            id: instancePropValue as string,
+            name: prevInstanceNode || 'Current',
+            id: prefInstanceId,
           });
         }
         break;
