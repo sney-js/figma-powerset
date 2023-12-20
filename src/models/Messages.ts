@@ -3,7 +3,7 @@ export type PluginMessages =
   | 'properties-list'
   | 'complete'
   | 'target'
-  | 'lock-prev-selection';
+  | 'lock-selection';
 
 export type PSMessage = {
   type: PluginMessages;
@@ -40,7 +40,7 @@ export type PSMessage_Create = {
 };
 
 export type PSMessage_Lock = {
-  type: 'lock-prev-selection';
+  type: 'lock-selection';
   data: {
     lock: boolean;
   };

@@ -1,10 +1,5 @@
 import { getMasterComponent, getMasterPropertiesDefinition, isInstance } from './components';
-import {
-  PSComponentPropertyDefinitions,
-  PSMessage,
-  PSMessage_Create,
-  PSMessage_Definition,
-} from '../models/Messages';
+import { PSMessage, PSMessage_Create, PSMessage_Definition } from '../models/Messages';
 import { layComponentGroup } from './renderer';
 
 figma.showUI(__html__, {
@@ -61,7 +56,7 @@ const selectAndView = (nodes: SceneNode[], select = false) => {
 
 const handlePluginMessage = async (message: PSMessage) => {
   switch (message.type) {
-    case 'lock-prev-selection':
+    case 'lock-selection':
       lockSelection = message.data.lock === true;
       let currSelection = figma.currentPage.selection[0];
       if (currSelection?.id !== lastInstance?.id) {

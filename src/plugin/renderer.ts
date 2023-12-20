@@ -38,7 +38,7 @@ export async function layComponentGroup(
   }
 
   const masterComp = getMasterComponent(instanceNode);
-  const mainFrame = getMainFrame('Powerset-' + masterComp.name);
+  const mainFrame = getMainFrame('Powerset/' + masterComp.name);
   nodes.push(mainFrame);
 
   let i = 0;
