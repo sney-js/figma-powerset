@@ -40,18 +40,19 @@ export async function layComponentGroup(
     return frame;
   }
 
-  const masterComp = getMasterComponent(instanceNode);
-  const mainFrame = getMainFrame(POWERSET_FRAME_PREFIX + masterComp.name);
+  // const masterComp = getMasterComponent(instanceNode);
+  const mainFrame = getMainFrame(POWERSET_FRAME_PREFIX + instanceNode.name);
   nodes.push(mainFrame);
 
   let i = 0;
   for (const { group, items } of data) {
-    const groupText = await makeText(group);
-    mainFrame.insertChild(i++, groupText);
-    groupText.layoutSizingHorizontal = 'HUG';
+    // const groupText = await makeText(group);
+    // mainFrame.insertChild(i++, groupText);
+    // groupText.layoutSizingHorizontal = 'HUG';
 
     const groupFrame = figma.createFrame();
     mainFrame.insertChild(i++, groupFrame);
+    groupFrame.name = group;
     groupFrame.layoutMode = 'HORIZONTAL';
     groupFrame.layoutWrap = 'WRAP';
     groupFrame.layoutSizingHorizontal = 'FILL';
@@ -67,8 +68,8 @@ export async function layComponentGroup(
       try {
         newVariant.setProperties(instanceProperties);
         // set twice to reset icon colors perhaps
-        newVariant.resetOverrides();
-        newVariant.setProperties(instanceProperties);
+        // newVariant.resetOverrides();
+        // newVariant.setProperties(instanceProperties);
         groupFrame.insertChild(j, newVariant);
         createdInstances++;
       } catch (e) {
