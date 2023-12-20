@@ -121,7 +121,9 @@ export const generatePropCombinations = (props: Record<string, any>): Record<str
 
   if (!transformedKeys) return [];
 
-  const requiredKeys = new Set(transformedKeys.filter((k) => k.indexOf('_') !== -1).map((k) => k.split('_')[0]));
+  const requiredKeys = new Set(
+    transformedKeys.filter((k) => k.indexOf('_') !== -1).map((k) => k.split('_')[0])
+  );
   const powerSetA = powerSet(transformedKeys);
 
   const cleanedPowerSet = new Set(
@@ -156,7 +158,12 @@ export const generatePropCombinations = (props: Record<string, any>): Record<str
  * @param array - priority string array. e.g. ['title', 'description']
  * @param index Recursive method iterator. e.g. 0
  */
-export const comparatorArrayPriority = (arr1: object, arr2: object, array: string[], index: number): number => {
+export const comparatorArrayPriority = (
+  arr1: object,
+  arr2: object,
+  array: string[],
+  index: number
+): number => {
   if (!index) index = 0;
   if (!array[index]) return 0;
   const key = array[index];
