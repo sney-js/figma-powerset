@@ -59,7 +59,7 @@ function App() {
             <Icon
               className={!variantSelection.isVariant ? 'pointer-none' : ''}
               isDisabled={!variantSelection.isVariant}
-              name={'visible'}
+              name={'instance'}
               onClick={() => {
                 sendPluginMessage({ type: 'target' });
               }}
