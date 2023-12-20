@@ -15,43 +15,64 @@ export function getMasterComponent(selection): ComponentSetNode | ComponentNode 
 }
 
 export async function getMasterPropertiesDefinition(
-  selection
+  selection: InstanceNode
 ): Promise<PSComponentPropertyDefinitions> {
   if (!selection) return null;
 
   const masterComponent = getMasterComponent(selection);
-  let compPropDef: PSComponentPropertyDefinitions = masterComponent?.componentPropertyDefinitions;
-  if (!compPropDef) return compPropDef;
+  let masterDef: PSComponentPropertyDefinitions = masterComponent?.componentPropertyDefinitions;
+  if (!masterDef) return masterDef;
+  const currentDefinitions = selection.componentProperties;
 
-  for (const propName in compPropDef) {
-    let propVal = compPropDef[propName];
-    if (propVal.type === 'INSTANCE_SWAP') {
-      propVal.instanceData = [];
-      for (const pref of propVal.preferredValues) {
-        let compFetchFunc: Function =
-          pref.type === 'COMPONENT_SET'
-            ? figma.importComponentSetByKeyAsync
-            : figma.importComponentByKeyAsync;
+  const sortedProps = Object.keys(masterDef).sort((a, b) => {
+    const isInstance = (x) => (masterDef[x].type === 'INSTANCE_SWAP' ? 2 : 0);
+    const isLinkedToLayer = (x) => (x.indexOf('#') !== -1 ? 1 : 0);
+    const allSortFunc = (x) => isInstance(x) + isLinkedToLayer(x);
+    return allSortFunc(a) - allSortFunc(b);
+  });
+  const compPropDef: PSComponentPropertyDefinitions = {};
+  for (const prop of sortedProps) {
+    compPropDef[prop] = masterDef[prop];
 
-        /*
-                        await compFetchFunc(pref.key)
-                          .then((compNode) => {
-                            propVal.instanceData.push({
-                              name: compNode.name,
-                              id: compNode.id,
-                            });
-                          })
-                          .catch(console.error);
-                */
+    const instancePropValue = currentDefinitions[prop].value;
+    if (instancePropValue) {
+      compPropDef[prop].defaultValue = instancePropValue;
+    }
+
+    switch (compPropDef[prop].type) {
+      case 'INSTANCE_SWAP': {
+        compPropDef[prop].instanceData = [];
+
+        for (const pref of compPropDef[prop].preferredValues) {
+          let compFetchFunc: Function =
+            pref.type === 'COMPONENT_SET'
+              ? figma.importComponentSetByKeyAsync
+              : figma.importComponentByKeyAsync;
+
+          await compFetchFunc(pref.key)
+            .then(({ id, name }) => {
+              compPropDef[prop].instanceData.push({
+                name: name,
+                id: id,
+              });
+            })
+            .catch(console.error);
+        }
+
+        if (instancePropValue !== compPropDef[prop].instanceData[0]?.id) {
+          compPropDef[prop].instanceData.push({
+            name: 'Current',
+            id: instancePropValue as string,
+          });
+        }
+        break;
       }
     }
   }
   return compPropDef;
 }
 
-export function isComponentOrVariant(
-  selection: SceneNode
-): selection is FrameNode | ComponentNode | InstanceNode | BooleanOperationNode {
+export function isInstance(selection: SceneNode): selection is InstanceNode {
   // || selection.type === 'COMPONENT' || selection.type === 'COMPONENT_SET';
   return selection && selection.type === 'INSTANCE';
 }

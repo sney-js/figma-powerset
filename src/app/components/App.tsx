@@ -1,83 +1,92 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import '../styles/ui.css';
 import 'react-figma-plugin-ds/figma-plugin-ds.css';
-import { Button, Disclosure, Text, Tip, Title } from 'react-figma-plugin-ds';
+import { Button, Disclosure, Icon, Text, Tip, Title } from 'react-figma-plugin-ds';
 import {
-  ComponentGroup,
   PSMessage,
-  PSMessage_Component,
+  PSMessage_Create,
   PSMessage_Definition,
   VariantProps,
 } from '../../models/Messages';
 import { VariantDefinitions } from './VariantDefinitions';
 import { cssVars } from '../utils/utils';
 
+function sendPluginMessage(pluginMessage: PSMessage) {
+  window.parent.postMessage({ pluginMessage }, '*');
+}
+
 function App() {
-  const [variantDefinitions, setVariantDefinitions] = useState<ComponentPropertyDefinitions>();
-  const [userSettings, setUserSettings] = useState<{ name; isVariant }>({
-    name: 'N/A',
+  const [variantSelection, setVariantSelection] = useState<PSMessage_Definition['data']>({
+    name: null,
+    id: null,
     isVariant: false,
+    variants: null,
   });
   const [powerset, setPowerset] = useState<Array<VariantProps>>();
+  const [lockSelection, setLockSelection] = useState(false);
 
-  const onCreate = () => {
-    console.log(powerset, 'powerset');
-    let data: ComponentGroup = [
-      {
-        group: 'Text',
-        items: powerset,
-      },
-    ];
-    parent.postMessage(
-      {
-        pluginMessage: {
-          type: 'create-group',
-          data: data,
-        } satisfies PSMessage_Component,
-      },
-      '*'
-    );
-  };
-
-  const onCancel = () => {
-    parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*');
-  };
-
-  useEffect(() => {
-    window.onmessage = (event) => {
-      const { type, data } = event.data.pluginMessage as PSMessage;
-      console.log('received msg1!', type);
+  useLayoutEffect(() => {
+    const handlePluginMessage = (pluginMessage: PSMessage) => {
+      const { type, data } = pluginMessage;
       switch (type) {
-        case 'complete':
-          break;
         case 'properties-list': {
-          const dData = data satisfies PSMessage_Definition['data'];
-          let instanceInfo = { name: dData.name, isVariant: false };
-          if (dData.variants) {
-            instanceInfo.isVariant = true;
-            setVariantDefinitions(dData.variants);
-          }
-          setUserSettings(instanceInfo);
+          setVariantSelection(data);
           break;
         }
       }
     };
+    window.addEventListener('message', (event) => handlePluginMessage(event.data.pluginMessage));
+    return () => {
+      window.removeEventListener('message', () => {});
+    };
   }, []);
 
-  let canCreate: boolean = !(userSettings.isVariant && powerset?.length);
+  useEffect(() => {
+    sendPluginMessage({
+      type: 'lock-prev-selection',
+      data: {
+        lock: lockSelection,
+      },
+    });
+  }, [lockSelection]);
+
+  let canCreate: boolean = !(variantSelection.isVariant && powerset?.length);
   return (
     <div className={'container'}>
-      {userSettings.isVariant ? (
-        <Title level="h1" size="xlarge" weight="bold">
-          {userSettings.name}
-        </Title>
-      ) : (
-        <Tip className={'mb-xsmall'} iconColor={'red'} iconName={'warning'}>
+      <div className={'sticky top-0'}>
+        <div className={'flex-between border-bottom-grey-10 pl-xxsmall pr-xsmall'}>
+          <Title level="h1" size="xlarge" weight="bold">
+            {variantSelection.isVariant ? `◇ ` : ''}
+            {variantSelection.name}
+          </Title>
+          <div className={'flex gap-1'}>
+            <Icon
+              className={!variantSelection.isVariant ? 'pointer-none' : ''}
+              isDisabled={!variantSelection.isVariant}
+              name={'visible'}
+              onClick={() => {
+                sendPluginMessage({ type: 'target' });
+              }}
+            />
+            <Icon
+              className={!variantSelection.isVariant ? 'pointer-none' : ''}
+              isDisabled={!variantSelection.isVariant}
+              name={!lockSelection ? 'lock-off' : 'lock-on'}
+              isSelected={lockSelection}
+              onClick={() => {
+                setLockSelection(!lockSelection);
+              }}
+            />
+          </div>
+        </div>
+      </div>
+      {!variantSelection.isVariant && (
+        <Tip className={'mb-xsmall type--small'} iconColor={'red'} iconName={'warning'}>
           Please select an instance of a component.
         </Tip>
       )}
-      {userSettings.isVariant && !powerset?.length && (
-        <Tip className={'mb-xsmall'} iconColor={'yellow'} iconName={'warning'}>
+      {variantSelection.isVariant && !powerset?.length && (
+        <Tip className={'mb-xsmall type--small'} iconColor={'yellow'} iconName={'warning'}>
           This component has no properties.
         </Tip>
       )}
@@ -99,15 +108,25 @@ function App() {
         </Disclosure>
       </div>
       <VariantDefinitions
-        definitions={variantDefinitions}
+        key={'table-' + variantSelection.id}
+        definitions={variantSelection.variants}
         onUserSelect={(data) => setPowerset(data)}
       />
-      <div className={'sticky'}>
+      <div className={'sticky p-xxsmall pl-xsmall pr-xsmall bottom-0 border-top-grey-10'}>
         <div className={'flex-between'}>
           <div className={'flex-grow'}>
             <Text>Total Variations: {powerset?.length || 0}</Text>
           </div>
-          <Button isDisabled={canCreate} onClick={onCreate}>
+          <Button
+            isDisabled={canCreate}
+            onClick={() => {
+              const pluginMessage: PSMessage_Create = {
+                type: 'create-group',
+                data: [{ group: 'Text', items: powerset }],
+              };
+              sendPluginMessage(pluginMessage);
+            }}
+          >
             Create Powerset
           </Button>
         </div>
@@ -115,4 +134,5 @@ function App() {
     </div>
   );
 }
+
 export default App;
