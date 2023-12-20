@@ -1,11 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Checkbox, Label, Text } from 'react-figma-plugin-ds';
 import { generatePropCombinations } from '../utils/Random';
-import { VariantProps, VariantPropsList } from '../../models/Messages';
+import {
+  PSComponentPropertyDefinitions,
+  VariantDefPropsList,
+  VariantProps,
+} from '../../models/Messages';
 
 type VariantDefinitionsParams = {
-  definitions: ComponentPropertyDefinitions;
-  onUserSelect: (data: VariantProps[]) => void;
+  definitions: PSComponentPropertyDefinitions;
+  onUserSelect: (powerset: VariantProps[]) => void;
 };
 const TextHelperList = [
   ['Words', 'Lorem ipsum dolor sit'],
@@ -23,8 +27,8 @@ const TextHelperList = [
 export function VariantDefinitions(props: VariantDefinitionsParams) {
   const { definitions, onUserSelect } = props;
 
-  const [masterDefinitions, setMasterDefinitions] = useState<VariantPropsList>();
-  const [userDefinitions, setUserDefinitions] = useState<VariantPropsList>();
+  const [masterDefinitions, setMasterDefinitions] = useState<VariantDefPropsList>();
+  const [userDefinitions, setUserDefinitions] = useState<VariantDefPropsList>();
 
   useEffect(() => {
     if (!definitions) return;
@@ -33,7 +37,7 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
       const val = definitions[key];
       switch (val.type) {
         case 'BOOLEAN':
-          varDef[key] = [true, false];
+          varDef[key] = [val.defaultValue, !val.defaultValue];
           break;
         case 'TEXT':
           varDef[key] = [
@@ -43,10 +47,11 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
             TextHelperList[2][1],
           ];
           break;
-        case 'INSTANCE_SWAP':
-          break;
         case 'VARIANT':
           varDef[key] = val.variantOptions;
+          break;
+        case 'INSTANCE_SWAP':
+          varDef[key] = val.instanceData.map((c) => c.id).filter(Boolean);
           break;
       }
     });
@@ -62,6 +67,7 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
 
   useEffect(() => {
     if (userDefinitions) {
+      console.log(userDefinitions, 'userDefinitions');
       const powerset: Array<VariantProps> = generatePropCombinations(userDefinitions);
       onUserSelect(powerset);
     }
@@ -84,60 +90,70 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
           </tr>
         </thead>
         <tbody>
-          {masterDefinitions &&
-            Object.keys(masterDefinitions).map((propName, i) => (
-              <tr key={propName + i}>
-                <td>
-                  <Label>{i + 1}.</Label>
-                </td>
-                <td>
-                  <Text className={'pl-xxsmall'}>
-                    {propName.split('#')[0]}
-                  </Text>
-                </td>
-                <td>
-                  {masterDefinitions[propName].map((val, j) => {
-                    let classes = [];
-                    let defaultChecked = j === 0;
-                    if (userDefinitions) {
-                      defaultChecked = userDefinitions[propName]?.some((x) => x === val);
-                    }
-                    let value = String(val);
-                    if (definitions[propName]?.type === 'TEXT') {
-                      let prettyName = TextHelperList.find((x) => x[1] === value);
-
-                      if (prettyName) {
-                        value = prettyName[0]+'*';
-                        classes.push('italics');
-                      } else {
-                        value = `'${value}'`;
+          {masterDefinitions
+            ? Object.keys(masterDefinitions).map((propName, i) => (
+                <tr key={propName + i}>
+                  <td>
+                    <Label>{i + 1}.</Label>
+                  </td>
+                  <td>
+                    <Text className={'pl-xxsmall'}>{propName.split('#')[0]}</Text>
+                  </td>
+                  <td>
+                    {masterDefinitions[propName].map((val, j) => {
+                      const masterDefValue = definitions[propName];
+                      let classes = [];
+                      let label;
+                      let defaultChecked = j === 0;
+                      if (userDefinitions) {
+                        defaultChecked = userDefinitions[propName]?.some(
+                          (userVal) => userVal === val
+                        );
                       }
-                      classes = classes.filter(Boolean);
-                    }
-                    return (
-                      <Checkbox
-                        className={classes.join(' ')}
-                        data-tooltip={'asd'}
-                        label={value}
-                        name={[propName, val].join('.')}
-                        defaultValue={defaultChecked}
-                        onChange={(_checked) => {
-                          let newDef = { ...userDefinitions };
-                          let currDefElement: any[] = newDef[propName];
-                          if (currDefElement) {
-                            const set = new Set(currDefElement);
-                            if (_checked) set.add(val);
-                            else set.delete(val);
-                            newDef[propName] = Array.from(set.values());
+                      switch (masterDefValue?.type) {
+                        case 'BOOLEAN':
+                        case 'VARIANT':
+                          label = String(val);
+                          break;
+                        case 'TEXT':
+                          const prettyName = TextHelperList.find((x) => x[1] === val);
+
+                          if (prettyName) {
+                            label = prettyName[0] + '...';
+                            classes.push('italics');
+                          } else {
+                            label = `'${val}'`;
                           }
-                          setUserDefinitions(newDef);
-                        }}
-                      />
-                    );
-                  })}
-                </td>
-              </tr>
-            ))}
+                          classes = classes.filter(Boolean);
+                          break;
+                        case 'INSTANCE_SWAP':
+                          label = masterDefValue.instanceData[j].name;
+                          break;
+                      }
+                      return (
+                        <Checkbox
+                          className={classes.join(' ')}
+                          label={label}
+                          name={[propName, val].join('.')}
+                          defaultValue={defaultChecked}
+                          onChange={(_checked) => {
+                            let newDef = { ...userDefinitions };
+                            let currDefElement: any[] = newDef[propName];
+                            if (currDefElement) {
+                              const set = new Set(currDefElement);
+                              if (_checked) set.add(val);
+                              else set.delete(val);
+                              newDef[propName] = Array.from(set.values());
+                            }
+                            setUserDefinitions(newDef);
+                          }}
+                        />
+                      );
+                    })}
+                  </td>
+                </tr>
+              ))
+            : null}
         </tbody>
       </table>
     </div>
