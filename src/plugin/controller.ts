@@ -1,5 +1,10 @@
 import { getMasterComponent, getMasterPropertiesDefinition, isInstance } from './components';
-import { PSMessage, PSMessage_Create, PSMessage_Definition } from '../models/Messages';
+import {
+  PSComponentPropertyDefinitions,
+  PSMessage,
+  PSMessage_Create,
+  PSMessage_Definition,
+} from '../models/Messages';
 import { layComponentGroup } from './renderer';
 
 figma.showUI(__html__, {
@@ -21,7 +26,7 @@ async function readSelection() {
   if (isInstance(selection)) {
     const master = getMasterComponent(selection satisfies InstanceNode);
 
-    function sendVariantsDataToPlugin(allVariants: ComponentPropertyDefinitions) {
+    function sendVariantsDataToPlugin(allVariants: PSComponentPropertyDefinitions) {
       sendPluginMessage({
         type: 'properties-list',
         data: {
@@ -30,7 +35,7 @@ async function readSelection() {
           isVariant: true,
           variants: allVariants,
         },
-      } satisfies PSMessage_Definition);
+      });
     }
 
     const allVariants = await getMasterPropertiesDefinition(selection, false);

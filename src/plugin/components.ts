@@ -1,4 +1,9 @@
-import { PSComponentPropertyDefinitions } from '../models/Messages';
+import {
+  PSComponentPropertyDefinitions,
+  PSComponentPropertyItemExposedInstance,
+  PSComponentPropertyItemInstanceData,
+  PSComponentPropertyItems,
+} from '../models/Messages';
 
 export function getMasterComponent(selection): ComponentSetNode | ComponentNode {
   if (!selection) return null;
@@ -14,6 +19,60 @@ export function getMasterComponent(selection): ComponentSetNode | ComponentNode 
   }
 }
 
+const propIsInstanceType = (
+  compProp: PSComponentPropertyItems
+): compProp is PSComponentPropertyItemInstanceData => compProp.type === 'INSTANCE_SWAP';
+
+const propIsExposedInstanceType = (
+  compProp: PSComponentPropertyItems
+): compProp is PSComponentPropertyItemExposedInstance => compProp.type === 'EXPOSED_INSTANCE';
+
+function sortedCompPropDefs(
+  compPropDef: PSComponentPropertyDefinitions
+): PSComponentPropertyDefinitions {
+  const sortedProps = Object.keys(compPropDef).sort((a, b) => {
+    const isInstance = (x) => (propIsInstanceType(compPropDef[x]) ? 2 : 0);
+    const isExposedInstance = (x) => (propIsExposedInstanceType(compPropDef[x]) ? 3 : 0);
+    const isLinkedToLayer = (x) => (x.indexOf('#') !== -1 ? 1 : 0);
+
+    const allSortFunc = (x) => isInstance(x) + isLinkedToLayer(x) + isExposedInstance(x);
+
+    return allSortFunc(a) - allSortFunc(b);
+  });
+
+  return sortedProps.reduce((obj, key) => {
+    obj[key] = compPropDef[key];
+    return obj;
+  }, {});
+}
+
+async function createInstanceData(
+  compPropDefEl: PSComponentPropertyItemInstanceData,
+  asyncComponentFetch: boolean
+): Promise<PSComponentPropertyItemInstanceData['instanceData']> {
+  let instanceData: PSComponentPropertyItemInstanceData['instanceData'] = [];
+  if (asyncComponentFetch) {
+    for (const pref of compPropDefEl.preferredValues) {
+      let compFetchFunc: Function =
+        pref.type === 'COMPONENT_SET'
+          ? figma.importComponentSetByKeyAsync
+          : figma.importComponentByKeyAsync;
+
+      await compFetchFunc(pref.key)
+        .then((node: ComponentNode | ComponentSetNode) => {
+          let { id, name } = node;
+          if (node.type === 'COMPONENT_SET') {
+            id = node.defaultVariant.id;
+          }
+          if (!propIsInstanceType(compPropDefEl)) return;
+          instanceData.push({ name, id });
+        })
+        .catch(console.error);
+    }
+  }
+  return instanceData;
+}
+
 export async function getMasterPropertiesDefinition(
   selection: InstanceNode,
   asyncComponentFetch: boolean
@@ -24,49 +83,29 @@ export async function getMasterPropertiesDefinition(
   let masterDef: PSComponentPropertyDefinitions = masterComponent?.componentPropertyDefinitions;
   if (!masterDef) return masterDef;
   const currentDefinitions = selection.componentProperties;
+  const compPropDef: PSComponentPropertyDefinitions = { ...masterDef };
 
-  const sortedProps = Object.keys(masterDef).sort((a, b) => {
-    const isInstance = (x) => (masterDef[x].type === 'INSTANCE_SWAP' ? 2 : 0);
-    const isLinkedToLayer = (x) => (x.indexOf('#') !== -1 ? 1 : 0);
-    const allSortFunc = (x) => isInstance(x) + isLinkedToLayer(x);
-    return allSortFunc(a) - allSortFunc(b);
-  });
-  const compPropDef: PSComponentPropertyDefinitions = {};
-  for (const prop of sortedProps) {
-    compPropDef[prop] = masterDef[prop];
+  for (const instance of selection.exposedInstances) {
+    compPropDef[instance.name] = {
+      type: 'EXPOSED_INSTANCE',
+      defaultValue: false,
+      properties: await getMasterPropertiesDefinition(instance, asyncComponentFetch),
+    };
+  }
 
-    const propValue = currentDefinitions[prop].value;
-    if (propValue) {
-      compPropDef[prop].defaultValue = propValue;
-    }
+  for (const prop of Object.keys(compPropDef)) {
+    const compPropDefEl: PSComponentPropertyItems = compPropDef[prop];
+    const currentInstancePropValue = currentDefinitions[prop]?.value;
 
-    switch (compPropDef[prop].type) {
+    switch (compPropDefEl.type) {
       case 'INSTANCE_SWAP': {
-        const prefInstanceId = propValue as string;
-        compPropDef[prop].instanceData = [];
+        if (!propIsInstanceType(compPropDefEl)) return;
+        compPropDefEl.instanceData = await createInstanceData(compPropDefEl, asyncComponentFetch);
 
-        for (const pref of compPropDef[prop].preferredValues) {
-          let compFetchFunc: Function =
-            pref.type === 'COMPONENT_SET'
-              ? figma.importComponentSetByKeyAsync
-              : figma.importComponentByKeyAsync;
-
-          if (asyncComponentFetch) {
-            await compFetchFunc(pref.key)
-              .then((node: ComponentNode | ComponentSetNode) => {
-                let { id, name } = node;
-                if (node.type === 'COMPONENT_SET') {
-                  id = node.defaultVariant.id;
-                }
-                compPropDef[prop].instanceData.push({ name, id });
-              })
-              .catch(console.error);
-          }
-        }
-
-        if (!compPropDef[prop].instanceData.some(({ id }) => id === prefInstanceId)) {
+        const prefInstanceId = currentInstancePropValue as string;
+        if (!compPropDefEl.instanceData.some(({ id }) => id === prefInstanceId)) {
           const prevInstanceNode = getMasterComponent(figma.getNodeById(prefInstanceId))?.name;
-          compPropDef[prop].instanceData.push({
+          compPropDefEl.instanceData.push({
             name: prevInstanceNode + ' (Current)',
             id: prefInstanceId,
           });
@@ -74,9 +113,15 @@ export async function getMasterPropertiesDefinition(
 
         break;
       }
+      default: {
+        if (currentInstancePropValue) {
+          compPropDefEl.defaultValue = currentInstancePropValue;
+        }
+      }
     }
   }
-  return compPropDef;
+
+  return sortedCompPropDefs(compPropDef);
 }
 
 export function isInstance(selection: SceneNode): selection is InstanceNode {

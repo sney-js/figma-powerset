@@ -17,11 +17,26 @@ export type PSInstanceSwapPreferredValue = {
   id: string;
 };
 
+type PSComponentPropertyItem = ComponentPropertyDefinitions[string];
+
+export type PSComponentPropertyItemExposedInstance = Omit<PSComponentPropertyItem, 'type'> & {
+  type: 'EXPOSED_INSTANCE';
+  properties?: PSComponentPropertyDefinitions;
+};
+
+export type PSComponentPropertyItemInstanceData = Omit<PSComponentPropertyItem, 'type'> & {
+  type: 'INSTANCE_SWAP';
+  instanceData?: PSInstanceSwapPreferredValue[];
+};
+
+export type PSComponentPropertyItems =
+  | PSComponentPropertyItem
+  | PSComponentPropertyItemInstanceData
+  | PSComponentPropertyItemExposedInstance;
+
 export type PSComponentPropertyDefinitions = {
-  [propertyName: string]: {
-    instanceData?: PSInstanceSwapPreferredValue[];
-  };
-} & ComponentPropertyDefinitions;
+  [propertyName: string]: PSComponentPropertyItems;
+};
 
 export type VariantOptionType = string | boolean;
 export type VariantDefType = string | boolean | PSInstanceSwapPreferredValue;
@@ -53,6 +68,6 @@ export type PSMessage_Definition = {
     name: string | null;
     id: string | null;
     isVariant: boolean;
-    variants: ComponentPropertyDefinitions;
+    variants: PSComponentPropertyDefinitions;
   };
 };

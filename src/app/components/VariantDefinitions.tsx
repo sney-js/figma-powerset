@@ -3,6 +3,7 @@ import { Checkbox, Label, Text } from 'react-figma-plugin-ds';
 import { generatePropCombinations } from '../utils/Random';
 import {
   PSComponentPropertyDefinitions,
+  PSComponentPropertyItemInstanceData,
   VariantDefPropsList,
   VariantProps,
 } from '../../models/Messages';
@@ -53,7 +54,9 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
           masterDef[key] = val.variantOptions;
           break;
         case 'INSTANCE_SWAP':
-          masterDef[key] = val.instanceData.map((c) => c.id).filter(Boolean);
+          masterDef[key] = (val as PSComponentPropertyItemInstanceData).instanceData
+            .map((c) => c.id)
+            .filter(Boolean);
           break;
       }
     });
@@ -130,7 +133,10 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
                         }
                         break;
                       case 'INSTANCE_SWAP':
-                        label = '◇ ' + masterDefValue.instanceData[j]?.name;
+                        label =
+                          '◇ ' +
+                          (masterDefValue as PSComponentPropertyItemInstanceData).instanceData[j]
+                            ?.name;
                         // instanceID = masterDefValue.instanceData[j]?.id;
                         break;
                     }
