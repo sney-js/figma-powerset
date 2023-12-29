@@ -114,7 +114,7 @@ function App() {
       </div>
       <VariantDefinitions
         key={'table-' + variantSelection.id}
-        definitions={variantSelection.variants}
+        compDefinitions={variantSelection.variants}
         selectionData={{ name: variantSelection.name, id: variantSelection.id }}
         onUserSelect={(data) => setPowerset(data)}
       />

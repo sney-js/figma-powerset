@@ -39,7 +39,7 @@ export type PSComponentPropertyDefinitions = {
 };
 
 export type VariantOptionType = string | boolean;
-export type VariantDefType = string | boolean | PSInstanceSwapPreferredValue;
+export type VariantDefType = string | boolean | PSInstanceSwapPreferredValue | VariantDefPropsList;
 
 export type VariantProps = Record<string, VariantOptionType>;
 export type VariantDefProps = Record<string, VariantDefType>;

@@ -3,14 +3,16 @@ import { Checkbox, Label, Text } from 'react-figma-plugin-ds';
 import { generatePropCombinations } from '../utils/Random';
 import {
   PSComponentPropertyDefinitions,
+  PSComponentPropertyItemExposedInstance,
   PSComponentPropertyItemInstanceData,
   VariantDefPropsList,
+  VariantDefType,
   VariantProps,
 } from '../../models/Messages';
 import { sendPluginMessage, truncate } from '../utils/utils';
 
 type VariantDefinitionsParams = {
-  definitions: PSComponentPropertyDefinitions;
+  compDefinitions: PSComponentPropertyDefinitions;
   selectionData: { name: string; id: string };
   onUserSelect: (powerset: VariantProps[]) => void;
 };
@@ -27,48 +29,57 @@ Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incid
   ],
 ];
 
-export function VariantDefinitions(props: VariantDefinitionsParams) {
-  const { definitions, selectionData, onUserSelect } = props;
+function createUIVariantDefinitions(definitions: PSComponentPropertyDefinitions) {
+  const masterDef: VariantDefPropsList = {};
+  Object.keys(definitions).forEach((key) => {
+    const val = definitions[key];
+    switch (val.type) {
+      case 'BOOLEAN':
+        masterDef[key] = [true, false];
+        break;
+      case 'TEXT':
+        masterDef[key] = [
+          val.defaultValue,
+          TextHelperList[0][1],
+          TextHelperList[1][1],
+          TextHelperList[2][1],
+        ];
+        break;
+      case 'VARIANT':
+        masterDef[key] = val.variantOptions;
+        break;
+      case 'INSTANCE_SWAP':
+        masterDef[key] = (val as PSComponentPropertyItemInstanceData).instanceData
+          .map((c) => c.id)
+          .filter(Boolean);
+        break;
+      case 'EXPOSED_INSTANCE':
+        let properties = (val as PSComponentPropertyItemExposedInstance).properties;
+        masterDef[key] = [createUIVariantDefinitions(properties)];
+        break;
+    }
+  });
+  return masterDef;
+}
 
-  const [masterDefinitions, setMasterDefinitions] = useState<VariantDefPropsList>();
+export function VariantDefinitions(props: VariantDefinitionsParams) {
+  const { compDefinitions, selectionData, onUserSelect } = props;
+
+  const [UIDefinitions, setUIDefinitions] = useState<VariantDefPropsList>();
   const [userDefinitions, setUserDefinitions] = useState<VariantDefPropsList>();
 
   useEffect(() => {
-    if (!definitions) return;
-    const masterDef: VariantDefPropsList = {};
-    Object.keys(definitions).forEach((key) => {
-      const val = definitions[key];
-      switch (val.type) {
-        case 'BOOLEAN':
-          masterDef[key] = [true, false];
-          break;
-        case 'TEXT':
-          masterDef[key] = [
-            val.defaultValue,
-            TextHelperList[0][1],
-            TextHelperList[1][1],
-            TextHelperList[2][1],
-          ];
-          break;
-        case 'VARIANT':
-          masterDef[key] = val.variantOptions;
-          break;
-        case 'INSTANCE_SWAP':
-          masterDef[key] = (val as PSComponentPropertyItemInstanceData).instanceData
-            .map((c) => c.id)
-            .filter(Boolean);
-          break;
-      }
-    });
-    // if (JSON.stringify(masterDef) !== JSON.stringify(masterDefinitions || {})) {
-    setMasterDefinitions(masterDef);
+    if (!compDefinitions) return;
+    const masterDef = createUIVariantDefinitions(compDefinitions);
+    // if (JSON.stringify(masterDef) !== JSON.stringify(UIDefinitions || {})) {
     const userDefDefault: VariantDefPropsList = {};
     Object.keys(masterDef).forEach((key) => {
-      userDefDefault[key] = [definitions[key].defaultValue];
+      userDefDefault[key] = [compDefinitions[key].defaultValue];
     });
+    setUIDefinitions(masterDef);
     setUserDefinitions(userDefDefault);
     // }
-  }, [definitions]);
+  }, [compDefinitions]);
 
   useEffect(() => {
     if (userDefinitions) {
@@ -76,7 +87,7 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
     }
   }, [userDefinitions]);
 
-  if (!masterDefinitions) return null;
+  if (!UIDefinitions) return null;
 
   return (
     <div>
@@ -95,7 +106,7 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
           </tr>
         </thead>
         <tbody>
-          {Object.keys(masterDefinitions).map((propName, i) => (
+          {Object.keys(UIDefinitions).map((propName, i) => (
             <tr key={propName + i}>
               <td>
                 <Label>{i + 1}.</Label>
@@ -105,17 +116,17 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
               </td>
               <td>
                 <div className={''} style={{ gridTemplateColumns: '1fr 1fr' }}>
-                  {masterDefinitions[propName].map((val, j) => {
-                    const masterDefValue = definitions[propName];
+                  {UIDefinitions[propName].map((val: VariantDefType, j) => {
+                    const compDefProperty = compDefinitions[propName];
                     let classes = ['flex-grow'];
-                    let label, instanceID;
+                    let label, instanceID, node;
                     let defaultChecked = false;
                     if (userDefinitions) {
                       defaultChecked = userDefinitions[propName]?.some(
                         (userVal) => userVal === val
                       );
                     }
-                    switch (masterDefValue?.type) {
+                    switch (compDefProperty?.type) {
                       case 'BOOLEAN':
                         label = String(Boolean(val));
                         break;
@@ -132,38 +143,63 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
                           label = `'${truncate(val as string, 27)}'`;
                         }
                         break;
-                      case 'INSTANCE_SWAP':
+                      case 'INSTANCE_SWAP': {
                         label =
                           '◇ ' +
-                          (masterDefValue as PSComponentPropertyItemInstanceData).instanceData[j]
+                          (compDefProperty as PSComponentPropertyItemInstanceData).instanceData[j]
                             ?.name;
-                        // instanceID = masterDefValue.instanceData[j]?.id;
+                        // instanceID = compDefProperty.instanceData[j]?.id;
                         break;
+                      }
+                      case 'EXPOSED_INSTANCE': {
+                        // label = Object.keys(val).join(',');
+                        // instanceID = compDefProperty.instanceData[j]?.id;
+                        break;
+                      }
                     }
 
                     label = truncate(label, 29);
                     classes = classes.filter(Boolean);
                     return (
                       <div className={'flex flex-between'}>
-                        <Checkbox
-                          className={classes.join(' ')}
-                          label={label}
-                          key={[propName, val, selectionData.id].join('-')}
-                          name={[propName, val].join('.')}
-                          defaultValue={defaultChecked}
-                          onChange={(_checked) => {
-                            let newDef = { ...userDefinitions };
-                            let currDefElement: any[] = newDef[propName];
-                            if (currDefElement) {
-                              const set = new Set(currDefElement);
-                              if (_checked) set.add(val);
-                              else set.delete(val);
-                              newDef[propName] = Array.from(set.values());
-                            }
-                            setUserDefinitions(newDef);
-                          }}
-                        />
-                        {instanceID && (
+                        {label ? (
+                          <Checkbox
+                            className={classes.join(' ')}
+                            label={label}
+                            key={[propName, val, selectionData.id].join('-')}
+                            name={[propName, val].join('.')}
+                            defaultValue={defaultChecked}
+                            onChange={(_checked) => {
+                              let newDef = { ...userDefinitions };
+                              let currDefElement: any[] = newDef[propName];
+                              if (currDefElement) {
+                                const set = new Set(currDefElement);
+                                if (_checked) set.add(val);
+                                else set.delete(val);
+                                newDef[propName] = Array.from(set.values());
+                              }
+                              setUserDefinitions(newDef);
+                            }}
+                          />
+                        ) : null}
+                        {compDefProperty.type === 'EXPOSED_INSTANCE' && (
+                          <VariantDefinitions
+                            compDefinitions={compDefProperty.properties}
+                            selectionData={{ name: propName, id: 'asd' }}
+                            onUserSelect={(data) => {
+                              setUserDefinitions((userDef) => {
+                                const appendedKeyData = Object.keys(data)
+                                  .map((k) => `${propName}#${k}`)
+                                  .reduce((obj, key) => {
+                                    obj[key] = data[key];
+                                    return obj;
+                                  }, {});
+                                return { ...userDef, ...appendedKeyData };
+                              });
+                            }}
+                          />
+                        )}
+                        {compDefProperty.type === 'INSTANCE_SWAP' && (
                           <span
                             onClick={() => {
                               sendPluginMessage({
