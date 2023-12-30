@@ -8,7 +8,9 @@ import {
   VariantDefType,
   VariantProps,
 } from '../../models/Messages';
-import { sendPluginMessage, truncate } from '../utils/utils';
+import {
+  generatePropCombinations,
+} from '../utils/Combinatrics';
 
 type VariantDefinitionsParams = {
   readonly compDefinitions: PSComponentPropertyDefinitions;
