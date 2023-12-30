@@ -1,6 +1,5 @@
 import {
   PSComponentPropertyDefinitions,
-  PSComponentPropertyItemExposedInstance,
   PSComponentPropertyItemInstanceData,
   PSComponentPropertyItems,
 } from '../models/Messages';
@@ -23,19 +22,14 @@ const propIsInstanceType = (
   compProp: PSComponentPropertyItems
 ): compProp is PSComponentPropertyItemInstanceData => compProp.type === 'INSTANCE_SWAP';
 
-const propIsExposedInstanceType = (
-  compProp: PSComponentPropertyItems
-): compProp is PSComponentPropertyItemExposedInstance => compProp.type === 'EXPOSED_INSTANCE';
-
 function sortedCompPropDefs(
   compPropDef: PSComponentPropertyDefinitions
 ): PSComponentPropertyDefinitions {
   const sortedProps = Object.keys(compPropDef).sort((a, b) => {
     const isInstance = (x) => (propIsInstanceType(compPropDef[x]) ? 2 : 0);
-    const isExposedInstance = (x) => (propIsExposedInstanceType(compPropDef[x]) ? 3 : 0);
     const isLinkedToLayer = (x) => (x.indexOf('#') !== -1 ? 1 : 0);
 
-    const allSortFunc = (x) => isInstance(x) + isLinkedToLayer(x) + isExposedInstance(x);
+    const allSortFunc = (x) => isInstance(x) + isLinkedToLayer(x);
 
     return allSortFunc(a) - allSortFunc(b);
   });
@@ -86,11 +80,18 @@ export async function getMasterPropertiesDefinition(
   const compPropDef: PSComponentPropertyDefinitions = { ...masterDef };
 
   for (const instance of selection.exposedInstances) {
-    compPropDef[instance.name] = {
-      type: 'EXPOSED_INSTANCE',
-      defaultValue: false,
-      properties: await getMasterPropertiesDefinition(instance, asyncComponentFetch),
-    };
+    const exposedVariantProperties: PSComponentPropertyDefinitions = await getMasterPropertiesDefinition(
+      instance,
+      asyncComponentFetch
+    );
+    Object.keys(exposedVariantProperties).forEach((kVariantDef) => {
+      compPropDef[instance.name + '{>}' + kVariantDef] = exposedVariantProperties[kVariantDef];
+    });
+    // compPropDef[instance.name] = {
+    //   type: 'EXPOSED_INSTANCE',
+    //   defaultValue: false,
+    //   properties: exposedVariantProperties,
+    // };
   }
 
   for (const prop of Object.keys(compPropDef)) {
