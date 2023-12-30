@@ -77,7 +77,7 @@ function App() {
         </div>
       </div>
       {!variantSelection.isVariant && (
-        <Tip className={'mb-xsmall type--small'} iconColor={'red'} iconName={'warning'}>
+        <Tip className={'mb-xsmall type--small text--grey-100'} iconColor={'red'} iconName={'warning'}>
           Please select an instance of a component.
         </Tip>
       )}
