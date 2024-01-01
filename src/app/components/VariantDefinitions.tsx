@@ -15,7 +15,7 @@ import {
 type VariantDefinitionsParams = {
   readonly compDefinitions: PSComponentPropertyDefinitions;
   selectionData: { name: string; id: string };
-  onUserSelect: (powerset: VariantProps[]) => void;
+  onUserSelect: (userSelections: VariantDefPropsList) => void;
 };
 const TextHelperList = [
   ['Words', 'Lorem ipsum dolor sit'],
@@ -83,11 +83,8 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
 
   useEffect(() => {
     if (userDefinitions) {
-      console.log(userDefinitions, 'userDefinitions');
-      setTimeout(()=>{
-        let powerset = generatePropCombinations(userDefinitions);
-        onUserSelect(powerset);
-      },50);
+      console.log(userDefinitions, 'userDefinitions', UIDefinitions);
+      onUserSelect(userDefinitions);
     }
   }, [userDefinitions]);
 

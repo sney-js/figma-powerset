@@ -39,30 +39,25 @@ export const powerSet2 = (list: string[]): string[][] => {
  * where n is the number of elements in the list.
  *
  * @param {string[]} list - The list of elements to generate the power set from.
+ * @param {number} minPropSize
  * @returns {string[][]} The power set of the list.
  */
-export const powerSet = (list: string[]): string[][] => {
-  const matrix: string[][] = [];
-  const listSize: number = list.length;
-  const combinationsCount: number = 1 << listSize;
-
-  function shouldIncludeInCombination(
-    combinationIndex: number,
-    elementIndex: number
-  ) {
-    return combinationIndex & (1 << elementIndex);
-  }
-
-  for (let i = 1; i < combinationsCount; i++) {
-    const combination: Array<string> = [];
-    for (let j = 0; j < listSize; j++) {
-      if (shouldIncludeInCombination(i, j)) {
-        combination.push(list[j]);
-      }
+export const powerSet = (list: string[], minPropSize: number): string[][] => {
+  const set: string[][] = [];
+  let s = [];
+  const generate = (start: number, subset: string[]) => {
+    if (subset.length >= minPropSize) {
+      set.push(subset);
     }
-    matrix.push(combination);
-  }
-  return matrix;
+    for (let i = start; i < list.length; i++) {
+      s.push(new Array(list.length - start).fill('#').join(''));
+      generate(i + 1, [...subset, list[i]]);
+    }
+  };
+
+  generate(0, []);
+  // console.log(s);
+  return set;
 };
 
 const KEY_DIV = '_' as const;
@@ -124,9 +119,28 @@ function extractFullPropCombinations(
 /**
  * Given an object with key value pair, returns all possible combinations
  * of keys along with their values
- * @param props : {title:'a', description: 'b'}
+ * @param obj - {title:'a', description: 'b'}
+ * @param keys - list of keys of that object
  * @returns [{title:'a'}, { description: 'b'}, {title:'a', description: 'b'}]
  */
+export function generateCombinations(obj: Record<string, any>, keys: string[]) {
+  if (!keys.length) return [{}];
+  const result = [];
+  const key = keys[0];
+  const restKeys = keys.slice(1);
+  const values = obj[key].length > 0 ? obj[key] : [undefined];
+  for (const value of values) {
+    const combinations = generateCombinations(obj, restKeys);
+    for (const combination of combinations) {
+      if (value !== undefined) {
+        result.push({ [key]: value, ...combination });
+      } else {
+        result.push({ ...combination });
+      }
+    }
+  }
+  return result;
+}
 
 export const generatePropCombinations = (
   props: Record<string, any>
@@ -134,10 +148,10 @@ export const generatePropCombinations = (
   const { transformedKeys, requiredKeys } = convertKeyValueToKeys(props);
   if (!transformedKeys) return [];
 
-  console.log({ props: Object.keys(props), transformedKeys, requiredKeys });
+  console.log({ props, transformedKeys, requiredKeys });
 
-  const powerSetA = powerSet(transformedKeys);
-  console.log(powerSetA.length, 'powerSetA');
+  const powerSetA = powerSet(transformedKeys, requiredKeys.size);
+  console.log(powerSetA, 'powerSetA');
 
   const combObj = extractFullPropCombinations(powerSetA, requiredKeys, props);
   console.log(combObj, 'combObj');
