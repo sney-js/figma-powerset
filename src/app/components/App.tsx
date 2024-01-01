@@ -1,21 +1,28 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 import '../styles/ui.css';
 import 'react-figma-plugin-ds/figma-plugin-ds.css';
-import { Button, Disclosure, Icon, Text, Tip, Title } from 'react-figma-plugin-ds';
+import {
+  Button,
+  Disclosure,
+  Icon,
+  Text,
+  Tip,
+  Title,
+} from 'react-figma-plugin-ds';
 import {
   PSMessage,
   PSMessage_Create,
   PSMessage_Definition,
   VariantProps,
 } from '../../models/Messages';
-import {
-  generateCombinations,
-} from '../utils/Combinatrics';
+import { generateCombinations } from '../utils/Combinatrics';
 import { cssVars, sendPluginMessage, truncate } from '../utils/utils';
 import { VariantDefinitions } from './VariantDefinitions';
 
 function App() {
-  const [variantSelection, setVariantSelection] = useState<PSMessage_Definition['data']>({
+  const [variantSelection, setVariantSelection] = useState<
+    PSMessage_Definition['data']
+  >({
     name: null,
     id: null,
     isVariant: false,
@@ -35,7 +42,9 @@ function App() {
         }
       }
     };
-    window.addEventListener('message', (event) => handlePluginMessage(event.data.pluginMessage));
+    window.addEventListener('message', (event) =>
+      handlePluginMessage(event.data.pluginMessage)
+    );
     return () => {
       window.removeEventListener('message', () => {});
     };
@@ -134,9 +143,7 @@ function App() {
         compDefinitions={variantSelection.variants}
         selectionData={{ name: variantSelection.name, id: variantSelection.id }}
         onUserSelect={(data) => {
-          // const totalKeys =
-          // let powerset = generatePropCombinations(data);
-          let powerset = generateCombinations(data,Object.keys(data));
+          const powerset = generateCombinations(data, Object.keys(data));
           setPowerset(powerset);
         }}
       />

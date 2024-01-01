@@ -123,14 +123,17 @@ function extractFullPropCombinations(
  * @param keys - list of keys of that object
  * @returns [{title:'a'}, { description: 'b'}, {title:'a', description: 'b'}]
  */
-export function generateCombinations(obj: Record<string, any>, keys: string[]) {
+export function generateCombinations(
+  obj: Record<string, any>,
+  keys: string[]
+): Record<string, any>[] {
   if (!keys.length) return [{}];
-  const result = [];
+  const result: Record<string, any>[] = [];
   const key = keys[0];
   const restKeys = keys.slice(1);
   const values = obj[key].length > 0 ? obj[key] : [undefined];
   for (const value of values) {
-    const combinations = generateCombinations(obj, restKeys);
+    const combinations: Record<string, any>[] = generateCombinations(obj, restKeys);
     for (const combination of combinations) {
       if (value !== undefined) {
         result.push({ [key]: value, ...combination });

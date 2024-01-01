@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Label, Text } from 'react-figma-plugin-ds';
-import { VariantSelector } from './VariantSelector';
+import { Checkbox, Label, Text } from 'react-figma-plugin-ds';
 import {
   PSComponentPropertyDefinitions,
   PSComponentPropertyItemInstanceData,
   VariantDefPropsList,
   VariantDefType,
-  VariantProps,
 } from '../../models/Messages';
 import {
-  generatePropCombinations,
-} from '../utils/Combinatrics';
+  propIsExposedInstanceType,
+  sortPropsOfCompPropDef,
+} from '../../models/Utils';
+import { VariantSelector } from './VariantSelector';
 
 type VariantDefinitionsParams = {
   readonly compDefinitions: PSComponentPropertyDefinitions;
@@ -34,7 +34,8 @@ function createUIVariantDefinitions(
   definitions: PSComponentPropertyDefinitions
 ): VariantDefPropsList {
   const uiDef: VariantDefPropsList = {};
-  Object.keys(definitions).forEach((key) => {
+  const sortedProps = sortPropsOfCompPropDef(definitions);
+  sortedProps.forEach((key) => {
     const val = definitions[key];
     switch (val.type) {
       case 'BOOLEAN':
@@ -56,6 +57,17 @@ function createUIVariantDefinitions(
           .map((c) => c.id)
           .filter(Boolean);
         break;
+      case 'EXPOSED_INSTANCE': {
+        if (!propIsExposedInstanceType(val)) break;
+        let properties: VariantDefPropsList = createUIVariantDefinitions(
+          val.properties
+        );
+        Object.keys(properties).forEach((kVariantDef) => {
+          uiDef[key + '{>}' + kVariantDef] = properties[kVariantDef];
+        });
+        // uiDef[key] = [properties];
+        break;
+      }
     }
   });
 
@@ -66,29 +78,28 @@ function createUIVariantDefinitions(
 export function VariantDefinitions(props: VariantDefinitionsParams) {
   const { compDefinitions, selectionData, onUserSelect } = props;
 
-  const [UIDefinitions, setUIDefinitions] = useState<VariantDefPropsList>();
+  const [uiDefinitions, setUiDefinitions] = useState<VariantDefPropsList>();
   const [userDefinitions, setUserDefinitions] = useState<VariantDefPropsList>();
 
   useEffect(() => {
     if (!compDefinitions) return;
     const uiDef = createUIVariantDefinitions(compDefinitions);
-    // if (JSON.stringify(uiDef) !== JSON.stringify(UIDefinitions || {})) {}
+    // if (JSON.stringify(uiDef) !== JSON.stringify(uiDefinitions || {})) {}
     const userDefDefault: VariantDefPropsList = {};
     Object.keys(uiDef).forEach((key) => {
       userDefDefault[key] = [compDefinitions[key]?.defaultValue];
     });
-    setUIDefinitions(uiDef);
+    setUiDefinitions(uiDef);
     setUserDefinitions(userDefDefault);
   }, [compDefinitions]);
 
   useEffect(() => {
     if (userDefinitions) {
-      console.log(userDefinitions, 'userDefinitions', UIDefinitions);
       onUserSelect(userDefinitions);
     }
   }, [userDefinitions]);
 
-  if (!UIDefinitions) return null;
+  if (!uiDefinitions) return null;
 
   return (
     <div>
@@ -102,35 +113,66 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
               <Label>Properties</Label>
             </th>
             <th style={{ width: '60%' }}>
-              <Label>Values</Label>
+              <Checkbox
+                className={`flex-grow`}
+                label={'All Values'}
+                name={[selectionData.id, 'all-values'].join('.')}
+                defaultValue={false}
+                onChange={(_checked) => {
+                  let newDef = { ...userDefinitions };
+                  if (_checked) {
+                    newDef = { ...uiDefinitions };
+                  } else {
+                    Object.keys(newDef).forEach((key) => {
+                      newDef[key] = [];
+                    });
+                  }
+                  setUserDefinitions(newDef);
+                }}
+              />
             </th>
           </tr>
         </thead>
         <tbody>
-          {Object.keys(UIDefinitions).map((propName, i) => (
+          {Object.keys(uiDefinitions).map((propName, i) => (
             <tr key={propName + i}>
               <td>
                 <Label>{i + 1}.</Label>
               </td>
               <td>
-                <Text className={'pl-xxsmall pr-xxsmall'}>{propName.split('#')[0]}</Text>
+                <Text className={'pl-xxsmall pr-xxsmall'}>
+                  {propName.split('#')[0]}
+                </Text>
               </td>
               <td>
                 <div className={''} style={{ gridTemplateColumns: '1fr 1fr' }}>
-                  {UIDefinitions[propName].map((propValue: VariantDefType) => {
+                  {uiDefinitions[propName].map((propValue: VariantDefType) => {
                     let defaultChecked = false;
                     if (userDefinitions) {
                       defaultChecked = userDefinitions[propName]?.some(
                         (userVal) => userVal === propValue
                       );
                     }
+                    let varDef = compDefinitions[propName];
+                    let exposedInstance = propName.split('{>}');
+                    if (exposedInstance[1]) {
+                      let propFed = compDefinitions[exposedInstance[0]];
+                      if (propIsExposedInstanceType(propFed)) {
+                        varDef = propFed.properties[exposedInstance[1]];
+                      }
+                    }
                     return (
                       <VariantSelector
                         propName={propName}
                         propValue={propValue}
                         defaultChecked={defaultChecked}
-                        definitionOptions={compDefinitions[propName]}
-                        key={[propName, propValue, selectionData.id].join('-')}
+                        definitionOptions={varDef}
+                        key={[
+                          propName,
+                          propValue,
+                          selectionData.id,
+                          defaultChecked,
+                        ].join('-')}
                         onChange={(_checked) => {
                           let newDef = { ...userDefinitions };
                           let currDefElement: any[] = newDef[propName];

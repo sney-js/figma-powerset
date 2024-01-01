@@ -19,6 +19,11 @@ export type PSInstanceSwapPreferredValue = {
 
 type PSComponentPropertyItem = ComponentPropertyDefinitions[string];
 
+export type PSComponentPropertyItemExposedInstance = Omit<PSComponentPropertyItem, 'type'> & {
+  type: 'EXPOSED_INSTANCE';
+  properties?: PSComponentPropertyDefinitions;
+};
+
 export type PSComponentPropertyItemInstanceData = Omit<PSComponentPropertyItem, 'type'> & {
   type: 'INSTANCE_SWAP';
   instanceData?: PSInstanceSwapPreferredValue[];
@@ -26,14 +31,15 @@ export type PSComponentPropertyItemInstanceData = Omit<PSComponentPropertyItem, 
 
 export type PSComponentPropertyItems =
   | PSComponentPropertyItem
-  | PSComponentPropertyItemInstanceData;
+  | PSComponentPropertyItemInstanceData
+  | PSComponentPropertyItemExposedInstance;
 
 export type PSComponentPropertyDefinitions = {
   [propertyName: string]: PSComponentPropertyItems;
 };
 
 export type VariantOptionType = string | boolean;
-export type VariantDefType = string | boolean;
+export type VariantDefType = string | boolean | PSInstanceSwapPreferredValue | VariantDefPropsList;
 
 export type VariantProps = Record<string, VariantOptionType>;
 export type VariantDefProps = Record<string, VariantDefType>;

@@ -3,8 +3,11 @@ import {
   PSComponentPropertyItemInstanceData,
   PSComponentPropertyItems,
 } from '../models/Messages';
+import { propIsInstanceType } from '../models/Utils';
 
-export function getMasterComponent(selection): ComponentSetNode | ComponentNode {
+export function getMasterComponent(
+  selection
+): ComponentSetNode | ComponentNode {
   if (!selection) return null;
 
   if (selection.type === 'INSTANCE') {
@@ -16,28 +19,6 @@ export function getMasterComponent(selection): ComponentSetNode | ComponentNode 
   } else {
     return null;
   }
-}
-
-const propIsInstanceType = (
-  compProp: PSComponentPropertyItems
-): compProp is PSComponentPropertyItemInstanceData => compProp.type === 'INSTANCE_SWAP';
-
-function sortedCompPropDefs(
-  compPropDef: PSComponentPropertyDefinitions
-): PSComponentPropertyDefinitions {
-  const sortedProps = Object.keys(compPropDef).sort((a, b) => {
-    const isInstance = (x) => (propIsInstanceType(compPropDef[x]) ? 2 : 0);
-    const isLinkedToLayer = (x) => (x.indexOf('#') !== -1 ? 1 : 0);
-
-    const allSortFunc = (x) => isInstance(x) + isLinkedToLayer(x);
-
-    return allSortFunc(a) - allSortFunc(b);
-  });
-
-  return sortedProps.reduce((obj, key) => {
-    obj[key] = compPropDef[key];
-    return obj;
-  }, {});
 }
 
 async function createInstanceData(
@@ -74,24 +55,20 @@ export async function getMasterPropertiesDefinition(
   if (!selection) return null;
 
   const masterComponent = getMasterComponent(selection);
-  let masterDef: PSComponentPropertyDefinitions = masterComponent?.componentPropertyDefinitions;
+  let masterDef: PSComponentPropertyDefinitions =
+    masterComponent?.componentPropertyDefinitions;
   if (!masterDef) return masterDef;
   const currentDefinitions = selection.componentProperties;
   const compPropDef: PSComponentPropertyDefinitions = { ...masterDef };
 
   for (const instance of selection.exposedInstances) {
-    const exposedVariantProperties: PSComponentPropertyDefinitions = await getMasterPropertiesDefinition(
-      instance,
-      asyncComponentFetch
-    );
-    Object.keys(exposedVariantProperties).forEach((kVariantDef) => {
-      compPropDef[instance.name + '{>}' + kVariantDef] = exposedVariantProperties[kVariantDef];
-    });
-    // compPropDef[instance.name] = {
-    //   type: 'EXPOSED_INSTANCE',
-    //   defaultValue: false,
-    //   properties: exposedVariantProperties,
-    // };
+    const exposedVariantProperties: PSComponentPropertyDefinitions =
+      await getMasterPropertiesDefinition(instance, asyncComponentFetch);
+    compPropDef[instance.name] = {
+      type: 'EXPOSED_INSTANCE',
+      defaultValue: false,
+      properties: exposedVariantProperties,
+    };
   }
 
   for (const prop of Object.keys(compPropDef)) {
@@ -101,11 +78,18 @@ export async function getMasterPropertiesDefinition(
     switch (compPropDefEl.type) {
       case 'INSTANCE_SWAP': {
         if (!propIsInstanceType(compPropDefEl)) return;
-        compPropDefEl.instanceData = await createInstanceData(compPropDefEl, asyncComponentFetch);
+        compPropDefEl.instanceData = await createInstanceData(
+          compPropDefEl,
+          asyncComponentFetch
+        );
 
         const prefInstanceId = currentInstancePropValue as string;
-        if (!compPropDefEl.instanceData.some(({ id }) => id === prefInstanceId)) {
-          const prevInstanceNode = getMasterComponent(figma.getNodeById(prefInstanceId))?.name;
+        if (
+          !compPropDefEl.instanceData.some(({ id }) => id === prefInstanceId)
+        ) {
+          const prevInstanceNode = getMasterComponent(
+            figma.getNodeById(prefInstanceId)
+          )?.name;
           compPropDefEl.instanceData.push({
             name: prevInstanceNode + ' (Current)',
             id: prefInstanceId,
@@ -122,7 +106,7 @@ export async function getMasterPropertiesDefinition(
     }
   }
 
-  return sortedCompPropDefs(compPropDef);
+  return compPropDef;
 }
 
 export function isInstance(selection: SceneNode): selection is InstanceNode {
