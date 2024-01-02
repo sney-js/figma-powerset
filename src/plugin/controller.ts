@@ -31,6 +31,10 @@ async function readSelection() {
   if (isInstance(selection)) {
     const master = getMasterComponent(selection satisfies InstanceNode);
 
+    const componentDefinitions = await getMasterPropertiesDefinition(selection, true);
+    const exposedInstancesDefinitions = await getExposedInstanceProperties(selection, true);
+    lastInstance = selection;
+
     function sendVariantsDataToPlugin(compVariants: PSComponentPropertyDefinitions, exposedInstancesVariants?: PSComponentPropertyExposed) {
       sendPluginMessage({
         type: 'properties-list',
@@ -43,11 +47,7 @@ async function readSelection() {
         },
       } satisfies PSMessage_Definition);
     }
-
-    const componentDefinitions = await getMasterPropertiesDefinition(selection, true);
-    const exposedInstancesDefinitions = await getExposedInstanceProperties(selection, true);
     sendVariantsDataToPlugin(componentDefinitions, exposedInstancesDefinitions);
-    lastInstance = selection;
   } else {
     lastInstance = null;
     sendPluginMessage({
