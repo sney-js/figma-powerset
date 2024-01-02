@@ -121,3 +121,12 @@ export function isInstance(selection: SceneNode): selection is InstanceNode {
   // || selection.type === 'COMPONENT' || selection.type === 'COMPONENT_SET';
   return selection && selection.type === 'INSTANCE';
 }
+
+export function instanceExists(instance?: InstanceNode) {
+  try {
+    instance?.mainComponent;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}

@@ -1,5 +1,4 @@
 import { PSMessage_Create, VariantProps } from '../models/Messages';
-import { getMasterComponent } from './InstanceUtils';
 
 const POWERSET_FRAME_PREFIX = 'Powerset/';
 
@@ -90,3 +89,10 @@ export async function layComponentGroup(
   figma.commitUndo();
   return nodes;
 }
+
+export const selectAndView = (nodes: SceneNode[], select = false) => {
+  if (select) {
+    figma.currentPage.selection = nodes;
+  }
+  figma.viewport.scrollAndZoomIntoView(nodes);
+};

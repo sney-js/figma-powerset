@@ -1,6 +1,4 @@
 import {
-  PSComponentPropertyDefinitions,
-  PSComponentPropertyExposed,
   PSMessage,
   PSMessage_Create,
   PSMessage_Definition,
@@ -9,21 +7,14 @@ import {
   getExposedInstanceProperties,
   getMasterComponent,
   getMasterPropertiesDefinition,
+  instanceExists,
   isInstance,
 } from './InstanceUtils';
-import { layComponentGroup } from './renderer';
-
-figma.showUI(__html__, {
-  width: 420,
-  height: 600,
-});
+import { sendPluginMessage } from './MessageUtils';
+import { layComponentGroup, selectAndView } from './renderer';
 
 let lockSelection = false;
 let lastInstance: InstanceNode = null;
-
-const sendPluginMessage = (pluginMessage: PSMessage) => {
-  figma.ui.postMessage(pluginMessage);
-};
 
 async function readSelection() {
   if (lockSelection) return;
@@ -42,7 +33,6 @@ async function readSelection() {
     );
 
     lastInstance = selection;
-
     sendPluginMessage({
       type: 'properties-list',
       data: {
@@ -65,22 +55,6 @@ async function readSelection() {
         exposedInstances: [],
       },
     } satisfies PSMessage_Definition);
-  }
-}
-
-const selectAndView = (nodes: SceneNode[], select = false) => {
-  if (select) {
-    figma.currentPage.selection = nodes;
-  }
-  figma.viewport.scrollAndZoomIntoView(nodes);
-};
-
-function instanceExists(instance?: InstanceNode) {
-  try {
-    instance?.mainComponent;
-    return true;
-  } catch (e) {
-    return false;
   }
 }
 
@@ -116,6 +90,13 @@ const handlePluginMessage = async (message: PSMessage) => {
   }
   // figma.closePlugin();
 };
+
+// ---------------------FIGMA COMMANDS---------------------
+
+figma.showUI(__html__, {
+  width: 420,
+  height: 600,
+});
 
 figma.ui.onmessage = (msg) => {
   handlePluginMessage(msg).then();
