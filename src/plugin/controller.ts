@@ -1,15 +1,16 @@
 import {
+  PSComponentPropertyDefinitions,
+  PSComponentPropertyExposed,
+  PSMessage,
+  PSMessage_Create,
+  PSMessage_Definition,
+} from '../models/Messages';
+import {
   getExposedInstanceProperties,
   getMasterComponent,
   getMasterPropertiesDefinition,
   isInstance,
 } from './InstanceUtils';
-import {
-  PSComponentPropertyDefinitions, PSComponentPropertyExposed,
-  PSMessage,
-  PSMessage_Create,
-  PSMessage_Definition,
-} from '../models/Messages';
 import { layComponentGroup } from './renderer';
 
 figma.showUI(__html__, {
@@ -31,23 +32,27 @@ async function readSelection() {
   if (isInstance(selection)) {
     const master = getMasterComponent(selection satisfies InstanceNode);
 
-    const componentDefinitions = await getMasterPropertiesDefinition(selection, true);
-    const exposedInstancesDefinitions = await getExposedInstanceProperties(selection, true);
+    const componentDefinitions = await getMasterPropertiesDefinition(
+      selection,
+      true
+    );
+    const exposedInstancesDefinitions = await getExposedInstanceProperties(
+      selection,
+      true
+    );
+
     lastInstance = selection;
 
-    function sendVariantsDataToPlugin(compVariants: PSComponentPropertyDefinitions, exposedInstancesVariants?: PSComponentPropertyExposed) {
-      sendPluginMessage({
-        type: 'properties-list',
-        data: {
-          name: master.name,
-          id: selection.id,
-          isVariant: true,
-          variants: compVariants,
-          exposedInstances: exposedInstancesVariants || [],
-        },
-      } satisfies PSMessage_Definition);
-    }
-    sendVariantsDataToPlugin(componentDefinitions, exposedInstancesDefinitions);
+    sendPluginMessage({
+      type: 'properties-list',
+      data: {
+        name: master.name,
+        id: selection.id,
+        isVariant: true,
+        variants: componentDefinitions,
+        exposedInstances: exposedInstancesDefinitions || [],
+      },
+    } satisfies PSMessage_Definition);
   } else {
     lastInstance = null;
     sendPluginMessage({
