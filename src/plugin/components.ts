@@ -1,5 +1,6 @@
 import {
   PSComponentPropertyDefinitions,
+  PSComponentPropertyExposed,
   PSComponentPropertyItemInstanceData,
   PSComponentPropertyItems,
 } from '../models/Messages';
@@ -48,6 +49,23 @@ async function createInstanceData(
   return instanceData;
 }
 
+export async function getExposedInstanceProperties(
+  selection: InstanceNode,
+  asyncComponentFetch: boolean
+): Promise<PSComponentPropertyExposed> {
+  const exposedInstances: PSComponentPropertyExposed = [];
+  for (const instance of selection.exposedInstances) {
+    const exposedVariantProperties: PSComponentPropertyDefinitions =
+      await getMasterPropertiesDefinition(instance, asyncComponentFetch);
+    exposedInstances.push({
+      variants: exposedVariantProperties,
+      name: instance.name,
+      id: instance.id,
+    });
+  }
+  return exposedInstances;
+}
+
 export async function getMasterPropertiesDefinition(
   selection: InstanceNode,
   asyncComponentFetch: boolean
@@ -60,16 +78,6 @@ export async function getMasterPropertiesDefinition(
   if (!masterDef) return masterDef;
   const currentDefinitions = selection.componentProperties;
   const compPropDef: PSComponentPropertyDefinitions = { ...masterDef };
-
-  for (const instance of selection.exposedInstances) {
-    const exposedVariantProperties: PSComponentPropertyDefinitions =
-      await getMasterPropertiesDefinition(instance, asyncComponentFetch);
-    compPropDef[instance.name] = {
-      type: 'EXPOSED_INSTANCE',
-      defaultValue: false,
-      properties: exposedVariantProperties,
-    };
-  }
 
   for (const prop of Object.keys(compPropDef)) {
     const compPropDefEl: PSComponentPropertyItems = compPropDef[prop];

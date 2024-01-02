@@ -2,19 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { Checkbox, Label, Text } from 'react-figma-plugin-ds';
 import {
   PSComponentPropertyDefinitions,
+  PSComponentPropertyExposed,
   PSComponentPropertyItemInstanceData,
   VariantDefPropsList,
   VariantDefType,
 } from '../../models/Messages';
-import {
-  propIsExposedInstanceType,
-  sortPropsOfCompPropDef,
-} from '../../models/Utils';
+import { sortPropsOfCompPropDef } from '../../models/Utils';
 import { VariantSelector } from './VariantSelector';
 
 type VariantDefinitionsParams = {
   readonly compDefinitions: PSComponentPropertyDefinitions;
-  selectionData: { name: string; id: string };
+  infoData: { name: string; id: string };
   onUserSelect: (userSelections: VariantDefPropsList) => void;
 };
 const TextHelperList = [
@@ -57,26 +55,36 @@ function createUIVariantDefinitions(
           .map((c) => c.id)
           .filter(Boolean);
         break;
-      case 'EXPOSED_INSTANCE': {
-        if (!propIsExposedInstanceType(val)) break;
-        let properties: VariantDefPropsList = createUIVariantDefinitions(
-          val.properties
-        );
-        Object.keys(properties).forEach((kVariantDef) => {
-          uiDef[key + '{>}' + kVariantDef] = properties[kVariantDef];
-        });
-        // uiDef[key] = [properties];
-        break;
-      }
+      // case 'EXPOSED_INSTANCE': {
+      //   if (!propIsExposedInstanceType(val)) break;
+      //   let properties: VariantDefPropsList = createUIVariantDefinitions(
+      //     val.properties
+      //   );
+      //   Object.keys(properties).forEach((kVariantDef) => {
+      //     uiDef[key + '{>}' + kVariantDef] = properties[kVariantDef];
+      //   });
+      //   // uiDef[key] = [properties];
+      //   break;
+      // }
     }
   });
+
+  // if (definitions._exposedInstances.length){
+  //   definitions._exposedInstances.forEach(def=>{
+  //     uiDef[def.instanceData.name] = [createUIVariantDefinitions(def.properties)];
+  //   })
+  // }
 
   console.log(uiDef, 'uiDef');
   return uiDef;
 }
 
 export function VariantDefinitions(props: VariantDefinitionsParams) {
-  const { compDefinitions, selectionData, onUserSelect } = props;
+  const {
+    compDefinitions,
+    infoData,
+    onUserSelect,
+  } = props;
 
   const [uiDefinitions, setUiDefinitions] = useState<VariantDefPropsList>();
   const [userDefinitions, setUserDefinitions] = useState<VariantDefPropsList>();
@@ -103,6 +111,12 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
 
   return (
     <div>
+      <div className={'flex flex-between gap-1'}>
+        <Label>{`◇ ` + infoData.name}</Label>
+        <Label className={'justify-content-end'}>
+          {1 + ' / '}
+        </Label>
+      </div>
       <table className={'table'}>
         <thead>
           <tr>
@@ -116,7 +130,7 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
               <Checkbox
                 className={`flex-grow`}
                 label={'All Values'}
-                name={[selectionData.id, 'all-values'].join('.')}
+                name={[infoData.id, 'all-values'].join('.')}
                 defaultValue={false}
                 onChange={(_checked) => {
                   let newDef = { ...userDefinitions };
@@ -154,13 +168,13 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
                       );
                     }
                     let varDef = compDefinitions[propName];
-                    let exposedInstance = propName.split('{>}');
-                    if (exposedInstance[1]) {
-                      let propFed = compDefinitions[exposedInstance[0]];
-                      if (propIsExposedInstanceType(propFed)) {
-                        varDef = propFed.properties[exposedInstance[1]];
-                      }
-                    }
+                    // let exposedInstance = propName.split('{>}');
+                    // if (exposedInstance[1]) {
+                    //   let propFed = compDefinitions[exposedInstance[0]];
+                    //   if (propIsExposedInstanceType(propFed)) {
+                    //     varDef = propFed.properties[exposedInstance[1]];
+                    //   }
+                    // }
                     return (
                       <VariantSelector
                         propName={propName}
@@ -170,7 +184,7 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
                         key={[
                           propName,
                           propValue,
-                          selectionData.id,
+                          infoData.id,
                           defaultChecked,
                         ].join('-')}
                         onChange={(_checked) => {

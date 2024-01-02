@@ -1,6 +1,11 @@
-import { getMasterComponent, getMasterPropertiesDefinition, isInstance } from './components';
 import {
-  PSComponentPropertyDefinitions,
+  getExposedInstanceProperties,
+  getMasterComponent,
+  getMasterPropertiesDefinition,
+  isInstance,
+} from './components';
+import {
+  PSComponentPropertyDefinitions, PSComponentPropertyExposed,
   PSMessage,
   PSMessage_Create,
   PSMessage_Definition,
@@ -26,25 +31,23 @@ async function readSelection() {
   if (isInstance(selection)) {
     const master = getMasterComponent(selection satisfies InstanceNode);
 
-    function sendVariantsDataToPlugin(allVariants: PSComponentPropertyDefinitions) {
+    function sendVariantsDataToPlugin(compVariants: PSComponentPropertyDefinitions, exposedInstancesVariants?: PSComponentPropertyExposed) {
       sendPluginMessage({
         type: 'properties-list',
         data: {
           name: master.name,
           id: selection.id,
           isVariant: true,
-          variants: allVariants,
+          variants: compVariants,
+          exposedInstances: exposedInstancesVariants || [],
         },
-      });
+      } satisfies PSMessage_Definition);
     }
 
-    const allVariants = await getMasterPropertiesDefinition(selection, false);
-    sendVariantsDataToPlugin(allVariants);
+    const componentDefinitions = await getMasterPropertiesDefinition(selection, true);
+    const exposedInstancesDefinitions = await getExposedInstanceProperties(selection, true);
+    sendVariantsDataToPlugin(componentDefinitions, exposedInstancesDefinitions);
     lastInstance = selection;
-    getMasterPropertiesDefinition(selection, true).then((data) => {
-      // console.log(data, 'allVariants');
-      sendVariantsDataToPlugin(data);
-    });
   } else {
     lastInstance = null;
     sendPluginMessage({
@@ -54,6 +57,7 @@ async function readSelection() {
         id: selection?.id || null,
         isVariant: false,
         variants: null,
+        exposedInstances: [],
       },
     } satisfies PSMessage_Definition);
   }
