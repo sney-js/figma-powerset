@@ -1,5 +1,5 @@
 import { PSMessage_Create, VariantProps } from '../models/Messages';
-import { getMasterComponent } from './components';
+import { getMasterComponent } from './InstanceUtils';
 
 const POWERSET_FRAME_PREFIX = 'Powerset/';
 

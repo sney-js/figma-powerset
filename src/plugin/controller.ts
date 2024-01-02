@@ -3,7 +3,7 @@ import {
   getMasterComponent,
   getMasterPropertiesDefinition,
   isInstance,
-} from './components';
+} from './InstanceUtils';
 import {
   PSComponentPropertyDefinitions, PSComponentPropertyExposed,
   PSMessage,
