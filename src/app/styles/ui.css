@@ -20,7 +20,7 @@ body {
     --grey-60: #a1a1a1;
     --grey-40: #737373;
     --grey-20: #5b5b5b;
-    --grey-10: #363636;
+    --grey-10: #282828;
     --grey-05: #1c1c1c;
     --grey-0: #181818;
     --bg: rgb(44, 44, 44);
@@ -38,7 +38,7 @@ body {
   padding: 4.5rem var(--sp-base);
 }
 
-.divider{
+.divider {
   background-color: var(--grey-20);
   display: block;
   width: 1px;
@@ -89,6 +89,23 @@ hr {
   background-color: var(--bg);
 }
 
+.sticky-exposed-instances {
+  position: sticky;
+  background-color: var(--bg);
+  bottom: 55px;
+  padding: var(--sp-xs) 0;
+  border-top: 1px solid var(--grey-10);
+  color: var(--grey-60);
+}
+
+.sticky-exposed-instances-title {
+  position: sticky;
+  background-color: var(--bg);
+  top: 52px;
+  border-bottom: 1px solid var(--grey-10);
+  z-index: 90;
+}
+
 .pointer-none {
   pointer-events: none;
 }
@@ -103,6 +120,18 @@ hr {
 
 .bottom-0 {
   bottom: 0;
+}
+
+.bottom-56 {
+  bottom: 56px;
+}
+
+.top-52 {
+  top: 52px;
+}
+
+.pt-s {
+  padding-top: var(--sp-base);
 }
 
 .border-bottom-grey-10 {
@@ -175,6 +204,13 @@ hr {
   align-items: center;
 }
 
+.rich-text {
+  font-size: var(--font-size-xsmall);
+  font-weight: var(--font-weight-normal);
+  letter-spacing: var(--font-letter-spacing-pos-xsmall);
+  line-height: var(--font-line-height);
+}
+
 /* ------------ overwrites --------------- */
 
 .checkbox__label:before {
@@ -200,4 +236,13 @@ hr {
   .icon-button:not(.icon-button--selected):disabled {
     background-color: var(--grey-80);
   }
+}
+
+.disclosure__section .disclosure__content {
+  padding: 0;
+  padding-top: var(--sp-base);
+  pointer-events: all;
+}
+.disclosure__section .disclosure__content > div {
+  padding: 0;
 }

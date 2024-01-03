@@ -88,10 +88,6 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
 
   return (
     <div>
-      <div className={'flex flex-between gap-1'}>
-        <Label>{`◇ ` + infoData.name}</Label>
-        <Label className={'justify-content-end'}>{1 + ' / '}</Label>
-      </div>
       <table className={'table'}>
         <thead>
           <tr>

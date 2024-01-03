@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 import '../styles/ui.css';
 import 'react-figma-plugin-ds/figma-plugin-ds.css';
-import { Button, Text } from 'react-figma-plugin-ds';
+import { Disclosure, Icon, Label } from 'react-figma-plugin-ds';
 import {
   ComponentGroup,
   PSMessage,
@@ -12,32 +12,10 @@ import {
 } from '../../models/Messages';
 import { generatePowerset } from '../utils/Combinatrics';
 import { sendPluginMessage } from '../utils/utils';
+import { Footer } from './Footer';
 import { Header } from './Header';
 import { InfoPanel } from './InfoPanel';
 import { VariantDefinitions } from './VariantDefinitions';
-
-function Footer(props: {
-  powerset: Array<VariantProps>;
-  disabled: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <div
-      className={
-        'sticky p-xxsmall pl-xsmall pr-xsmall bottom-0 border-top-grey-10'
-      }
-    >
-      <div className={'flex-between'}>
-        <div className={'flex-grow'}>
-          <Text>Total Variations: {props.powerset?.length || 0}</Text>
-        </div>
-        <Button isDisabled={props.disabled} onClick={props.onClick}>
-          Create Powerset
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 const flattenUserSelection = (
   userSelections: Record<string, VariantDefPropsList>,
@@ -129,28 +107,68 @@ function App() {
       <Header name={name} isVariant={isVariant} />
       <InfoPanel isVariant={isVariant} compDefinitions={variants} />
 
-      <VariantDefinitions
-        key={'table-' + id}
-        compDefinitions={variants}
-        infoData={{ name: name, id: id }}
-        onUserSelect={(data: VariantDefPropsList) => {
-          const curr = userSelections ? { ...userSelections } : {};
-          curr[id] = data;
-          setUserSelections(curr);
-        }}
-      />
-      {exposedInstances.map((def) => (
+      <div>
+        {name && (
+          <div
+            className={'flex flex-between gap-1 sticky-exposed-instances-title'}
+          >
+            <Label>{`◇ ` + name}</Label>
+            {exposedInstances.length ? (
+              <Label className={'justify-content-end'}>
+                {1 + ' / ' + (exposedInstances.length + 1)}
+              </Label>
+            ) : null}
+          </div>
+        )}
         <VariantDefinitions
-          key={'table-' + def.id}
-          compDefinitions={def.variants}
-          infoData={{ name: def.name, id: def.id }}
+          key={'table-' + id}
+          compDefinitions={variants}
+          infoData={{ name: name, id: id }}
           onUserSelect={(data: VariantDefPropsList) => {
             const curr = userSelections ? { ...userSelections } : {};
-            curr[def.id] = data;
+            curr[id] = data;
             setUserSelections(curr);
           }}
         />
-      ))}
+      </div>
+      {exposedInstances.length > 0 && (
+        <div
+          className={
+            'sticky-exposed-instances type type--bold flex justify-content-between'
+          }
+        >
+          <span>{`Exposed Instances (${exposedInstances.length})`}</span>
+          <span>↓</span>
+        </div>
+      )}
+      {exposedInstances.length > 0 && (
+        <div>
+          {exposedInstances.map((def, i) => (
+            <div className={i > 0 ? `pt-small` : ''}>
+              <div
+                className={
+                  'flex flex-between gap-1 sticky-exposed-instances-title'
+                }
+              >
+                <Label>{`◇ ` + def.name}</Label>
+                <Label className={'justify-content-end'}>
+                  {i + 2 + ' / ' + (exposedInstances.length + 1)}
+                </Label>
+              </div>
+              <VariantDefinitions
+                key={'table-' + def.id}
+                compDefinitions={def.variants}
+                infoData={{ name: def.name, id: def.id }}
+                onUserSelect={(data: VariantDefPropsList) => {
+                  const curr = userSelections ? { ...userSelections } : {};
+                  curr[def.id] = data;
+                  setUserSelections(curr);
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
       <Footer
         powerset={powerset}
