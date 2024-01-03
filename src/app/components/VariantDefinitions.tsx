@@ -55,36 +55,13 @@ function createUIVariantDefinitions(
           .map((c) => c.id)
           .filter(Boolean);
         break;
-      // case 'EXPOSED_INSTANCE': {
-      //   if (!propIsExposedInstanceType(val)) break;
-      //   let properties: VariantDefPropsList = createUIVariantDefinitions(
-      //     val.properties
-      //   );
-      //   Object.keys(properties).forEach((kVariantDef) => {
-      //     uiDef[key + '{>}' + kVariantDef] = properties[kVariantDef];
-      //   });
-      //   // uiDef[key] = [properties];
-      //   break;
-      // }
     }
   });
-
-  // if (definitions._exposedInstances.length){
-  //   definitions._exposedInstances.forEach(def=>{
-  //     uiDef[def.instanceData.name] = [createUIVariantDefinitions(def.properties)];
-  //   })
-  // }
-
-  console.log(uiDef, 'uiDef');
   return uiDef;
 }
 
 export function VariantDefinitions(props: VariantDefinitionsParams) {
-  const {
-    compDefinitions,
-    infoData,
-    onUserSelect,
-  } = props;
+  const { compDefinitions, infoData, onUserSelect } = props;
 
   const [uiDefinitions, setUiDefinitions] = useState<VariantDefPropsList>();
   const [userDefinitions, setUserDefinitions] = useState<VariantDefPropsList>();
@@ -113,9 +90,7 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
     <div>
       <div className={'flex flex-between gap-1'}>
         <Label>{`◇ ` + infoData.name}</Label>
-        <Label className={'justify-content-end'}>
-          {1 + ' / '}
-        </Label>
+        <Label className={'justify-content-end'}>{1 + ' / '}</Label>
       </div>
       <table className={'table'}>
         <thead>

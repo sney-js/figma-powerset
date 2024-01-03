@@ -1,14 +1,16 @@
-import React, { useLayoutEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import '../styles/ui.css';
 import 'react-figma-plugin-ds/figma-plugin-ds.css';
 import { Button, Text } from 'react-figma-plugin-ds';
 import {
+  ComponentGroup,
   PSMessage,
   PSMessage_Create,
   PSMessage_Definition,
+  VariantDefPropsList,
   VariantProps,
 } from '../../models/Messages';
-import { generateCombinations } from '../utils/Combinatrics';
+import { generatePowerset } from '../utils/Combinatrics';
 import { sendPluginMessage } from '../utils/utils';
 import { Header } from './Header';
 import { InfoPanel } from './InfoPanel';
@@ -37,16 +39,60 @@ function Footer(props: {
   );
 }
 
+const flattenUserSelection = (
+  userSelections: Record<string, VariantDefPropsList>,
+  mainKey: string
+): VariantDefPropsList => {
+  let allSelections: VariantDefPropsList = {};
+  for (const propKey in userSelections) {
+    for (const prop in userSelections[propKey]) {
+      let propName = prop;
+      if (propKey !== mainKey) {
+        propName = propKey + '///' + prop;
+      }
+      allSelections[propName] = userSelections[propKey][prop];
+    }
+  }
+  return allSelections;
+};
+
+function formatExposedInstances(
+  powerset: Array<VariantProps>
+): ComponentGroup[number]['items'] {
+  const responseData: ComponentGroup[number]['items'] = [...powerset];
+  for (let i = 0; i < responseData.length; i++) {
+    responseData[i].__exposedInstances = {};
+    for (const prop in responseData[i]) {
+      let val = prop.split('///');
+      if (val[1]) {
+        let exposedInstanceItem = responseData[i].__exposedInstances[val[0]];
+
+        if (!exposedInstanceItem)
+          responseData[i].__exposedInstances[val[0]] = {};
+        responseData[i].__exposedInstances[val[0]][val[1]] =
+          responseData[i][prop];
+        delete responseData[i][prop];
+      }
+    }
+  }
+  return responseData;
+}
+
 function App() {
-  const [instanceInfo, setInstanceInfo] = useState<
-    PSMessage_Definition['data']
-  >({
+  let instanceInfoInitialState = {
     name: null,
     id: null,
     isVariant: false,
     variants: null,
     exposedInstances: [],
-  });
+  };
+  const [instanceInfo, setInstanceInfo] = useState<
+    PSMessage_Definition['data']
+  >(instanceInfoInitialState);
+
+  const [userSelections, setUserSelections] =
+    useState<Record<string, VariantDefPropsList>>(null);
+
   const [powerset, setPowerset] = useState<Array<VariantProps>>();
 
   useLayoutEffect(() => {
@@ -68,8 +114,16 @@ function App() {
     };
   }, []);
 
-  const { variants, name, exposedInstances, id, isVariant } = instanceInfo;
+  useEffect(() => setUserSelections(null), [instanceInfo]);
 
+  useEffect(() => {
+    if (!userSelections) return;
+    let allSelections = flattenUserSelection(userSelections, instanceInfo.id);
+    const pwrSet = generatePowerset(allSelections);
+    setPowerset(pwrSet);
+  }, [userSelections]);
+
+  const { variants, name, exposedInstances, id, isVariant } = instanceInfo;
   return (
     <div className={'container'}>
       <Header name={name} isVariant={isVariant} />
@@ -79,9 +133,10 @@ function App() {
         key={'table-' + id}
         compDefinitions={variants}
         infoData={{ name: name, id: id }}
-        onUserSelect={(data) => {
-          const powerset = generateCombinations(data, Object.keys(data));
-          setPowerset(powerset);
+        onUserSelect={(data: VariantDefPropsList) => {
+          const curr = userSelections ? { ...userSelections } : {};
+          curr[id] = data;
+          setUserSelections(curr);
         }}
       />
       {exposedInstances.map((def) => (
@@ -89,9 +144,10 @@ function App() {
           key={'table-' + def.id}
           compDefinitions={def.variants}
           infoData={{ name: def.name, id: def.id }}
-          onUserSelect={(_data) => {
-            // const powerset = generateCombinations(data, Object.keys(data));
-            // setPowerset(powerset);
+          onUserSelect={(data: VariantDefPropsList) => {
+            const curr = userSelections ? { ...userSelections } : {};
+            curr[def.id] = data;
+            setUserSelections(curr);
           }}
         />
       ))}
@@ -100,9 +156,12 @@ function App() {
         powerset={powerset}
         disabled={!(isVariant && powerset?.length)}
         onClick={() => {
+          let responseData = exposedInstances.length
+            ? formatExposedInstances(powerset)
+            : powerset;
           const pluginMessage: PSMessage_Create = {
             type: 'create-group',
-            data: [{ group: name, items: powerset }],
+            data: [{ group: name, items: responseData }],
           };
           sendPluginMessage(pluginMessage);
         }}

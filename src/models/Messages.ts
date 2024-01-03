@@ -47,9 +47,12 @@ export type VariantDefType = string | boolean;
 
 export type VariantProps = Record<string, VariantOptionType>;
 export type VariantDefPropsList = Record<string, VariantDefType[]>;
+export type ResponseExposedInstancesVariantProps = {
+  __exposedInstances?: Record<string, VariantProps>;
+};
 export type ComponentGroup = Array<{
   group: string;
-  items: Array<VariantProps>;
+  items: Array<VariantProps & ResponseExposedInstancesVariantProps>;
 }>;
 
 export type PSMessage_Create = {
