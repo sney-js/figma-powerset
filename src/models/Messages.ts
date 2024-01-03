@@ -2,6 +2,7 @@ export type PluginMessages =
   | 'create-group'
   | 'properties-list'
   | 'complete'
+  | 'minimise-ui'
   | 'target'
   | 'focus-id'
   | 'lock-selection';

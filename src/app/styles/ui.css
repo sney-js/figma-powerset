@@ -30,10 +30,19 @@ body {
 body {
   background-color: var(--bg);
   color: var(--grey-100);
+  /*background-color: var(--figma-color-bg);*/
+  /*color: var(--figma-color-text);*/
 }
 
 .container {
   padding: 4.5rem var(--sp-base);
+}
+
+.divider{
+  background-color: var(--grey-20);
+  display: block;
+  width: 1px;
+  margin: 0 4px;
 }
 
 hr {

@@ -5,15 +5,29 @@ import { sendPluginMessage, truncate } from '../utils/utils';
 export function Header(props: { name: string | null; isVariant: boolean }) {
   const { name, isVariant } = props;
   const [lockSelection, setLockSelection] = useState(false);
+  const [minimiseUI, setMinimiseUI] = useState(false);
 
-  useEffect(() => {
-    sendPluginMessage({
-      type: 'lock-selection',
-      data: {
-        lock: lockSelection,
-      },
-    });
-  }, [lockSelection]);
+  useEffect(
+    () =>
+      sendPluginMessage({
+        type: 'lock-selection',
+        data: {
+          lock: lockSelection,
+        },
+      }),
+    [lockSelection]
+  );
+
+  useEffect(
+    () =>
+      sendPluginMessage({
+        type: 'minimise-ui',
+        data: {
+          minimise: minimiseUI,
+        },
+      }),
+    [minimiseUI]
+  );
 
   return (
     <div className={'sticky top-0'}>
@@ -25,23 +39,37 @@ export function Header(props: { name: string | null; isVariant: boolean }) {
           {truncate(name)}
         </Title>
         <div className={'flex gap-1'}>
-          <Icon
-            className={!isVariant ? 'pointer-none' : ''}
-            isDisabled={!isVariant}
-            name={'instance'}
-            onClick={() => {
-              sendPluginMessage({ type: 'target' });
-            }}
-          />
-          <Icon
-            className={!isVariant ? 'pointer-none' : ''}
-            isDisabled={!isVariant}
-            name={!lockSelection ? 'lock-off' : 'lock-on'}
-            isSelected={lockSelection}
-            onClick={() => {
-              setLockSelection(!lockSelection);
-            }}
-          />
+          <div title={'Scroll to instance'}>
+            <Icon
+              className={!isVariant ? 'pointer-none' : ''}
+              isDisabled={!isVariant}
+              name={'instance'}
+              onClick={() => {
+                sendPluginMessage({ type: 'target' });
+              }}
+            />
+          </div>
+          <div title={'Persist current properties'}>
+            <Icon
+              className={!isVariant ? 'pointer-none' : ''}
+              isDisabled={!isVariant}
+              name={!lockSelection ? 'lock-off' : 'lock-on'}
+              isSelected={lockSelection}
+              onClick={() => {
+                setLockSelection(!lockSelection);
+              }}
+            />
+          </div>
+          <div className={'divider'} />
+          <div title={'Minimise Plugin'}>
+            <Icon
+              name={!minimiseUI ? 'minus' : 'plus'}
+              isSelected={false}
+              onClick={() => {
+                setMinimiseUI(!minimiseUI);
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>

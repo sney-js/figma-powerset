@@ -14,6 +14,7 @@ import { sendPluginMessage } from './MessageUtils';
 import { layComponentGroup, selectAndView } from './renderer';
 
 let lockSelection = false;
+let minimiseUI: boolean = false;
 let lastInstance: InstanceNode = null;
 
 async function readSelection() {
@@ -67,6 +68,10 @@ const handlePluginMessage = async (message: PSMessage) => {
         readSelection().then();
       }
       break;
+    case 'minimise-ui':
+      minimiseUI = message.data.minimise === true;
+      figma.ui.resize(420, minimiseUI ? 106 : 600)
+      break;
     case 'create-group':
       if (lastInstance && lastInstance.type === 'INSTANCE') {
         const data = message.data satisfies PSMessage_Create['data'];
@@ -96,6 +101,7 @@ const handlePluginMessage = async (message: PSMessage) => {
 figma.showUI(__html__, {
   width: 420,
   height: 600,
+  themeColors: true
 });
 
 figma.ui.onmessage = (msg) => {
