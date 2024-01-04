@@ -112,7 +112,7 @@ function App() {
           <div
             className={'flex flex-between gap-1 sticky-exposed-instances-title'}
           >
-            <Label>{`◇ ` + name}</Label>
+            <Label className={'text--grey-80'}>{`◇ ` + name}</Label>
             {exposedInstances.length ? (
               <Label className={'justify-content-end'}>
                 {1 + ' / ' + (exposedInstances.length + 1)}
@@ -150,11 +150,12 @@ function App() {
                   'flex flex-between gap-1 sticky-exposed-instances-title'
                 }
               >
-                <Label>{`◇ ` + def.name}</Label>
+                <Label className={'text--grey-80'}>{`◇ ` + def.name}</Label>
                 <Label className={'justify-content-end'}>
                   {i + 2 + ' / ' + (exposedInstances.length + 1)}
                 </Label>
               </div>
+
               <VariantDefinitions
                 key={'table-' + def.id}
                 compDefinitions={def.variants}

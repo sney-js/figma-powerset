@@ -13,6 +13,11 @@ import {
 import { sendPluginMessage } from './MessageUtils';
 import { layComponentGroup, selectAndView } from './renderer';
 
+const SHOW_UI_OPTIONS = {
+  width: 420,
+  height: 600,
+  themeColors: false,
+} as const;
 let lockSelection = false;
 let minimiseUI: boolean = false;
 let lastInstance: InstanceNode = null;
@@ -70,7 +75,7 @@ const handlePluginMessage = async (message: PSMessage) => {
       break;
     case 'minimise-ui':
       minimiseUI = message.data.minimise === true;
-      figma.ui.resize(420, minimiseUI ? 106 : 600)
+      figma.ui.resize(SHOW_UI_OPTIONS.width, minimiseUI ? 106 : SHOW_UI_OPTIONS.height)
       break;
     case 'create-group':
       if (lastInstance && lastInstance.type === 'INSTANCE') {
@@ -98,11 +103,7 @@ const handlePluginMessage = async (message: PSMessage) => {
 
 // ---------------------FIGMA COMMANDS---------------------
 
-figma.showUI(__html__, {
-  width: 420,
-  height: 600,
-  themeColors: true
-});
+figma.showUI(__html__, SHOW_UI_OPTIONS);
 
 figma.ui.onmessage = (msg) => {
   handlePluginMessage(msg).then();

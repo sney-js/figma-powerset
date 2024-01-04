@@ -94,10 +94,10 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
             <th style={{ width: '30px' }}>
               <Label>#</Label>
             </th>
-            <th style={{ width: '35%' }}>
+            <th style={{ width: '33%' }}>
               <Label>Properties</Label>
             </th>
-            <th style={{ width: '60%' }}>
+            <th style={{ width: '63%' }}>
               <Checkbox
                 className={`flex-grow`}
                 label={'All Values'}
@@ -130,7 +130,7 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
                 </Text>
               </td>
               <td>
-                <div className={''} style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <div className={'table_variant-selector_item'}>
                   {uiDefinitions[propName].map((propValue: VariantDefType) => {
                     let defaultChecked = false;
                     if (userDefinitions) {

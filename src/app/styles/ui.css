@@ -20,9 +20,9 @@ body {
     --grey-60: #a1a1a1;
     --grey-40: #737373;
     --grey-20: #5b5b5b;
-    --grey-10: #282828;
-    --grey-05: #1c1c1c;
-    --grey-0: #181818;
+    --grey-10: rgb(61, 61, 61);
+    --grey-05: rgb(49, 49, 49);
+    --grey-0: rgb(44, 44, 44);
     --bg: rgb(44, 44, 44);
   }
 }
@@ -96,6 +96,7 @@ hr {
   padding: var(--sp-xs) 0;
   border-top: 1px solid var(--grey-10);
   color: var(--grey-60);
+  margin-top: -1px;
 }
 
 .sticky-exposed-instances-title {
@@ -104,6 +105,11 @@ hr {
   top: 52px;
   border-bottom: 1px solid var(--grey-10);
   z-index: 90;
+  margin-bottom: -1px;
+}
+
+.sticky-exposed-instances-title label {
+  color: var(--grey-80) !important;
 }
 
 .pointer-none {
@@ -144,6 +150,10 @@ hr {
 
 .text--grey-100 {
   color: var(--grey-100);
+}
+
+.text--grey-80 {
+  color: var(--grey-80) !important;
 }
 
 .flex-between {
@@ -209,6 +219,12 @@ hr {
   font-weight: var(--font-weight-normal);
   letter-spacing: var(--font-letter-spacing-pos-xsmall);
   line-height: var(--font-line-height);
+}
+
+.table_variant-selector_item {
+  /*display: grid;*/
+  /*gap: 0 var(--sp-xs);*/
+  /*grid-template-columns: repeat(auto-fit, 200px);*/
 }
 
 /* ------------ overwrites --------------- */

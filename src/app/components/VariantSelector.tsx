@@ -57,9 +57,9 @@ export const VariantSelector: React.FC<NewComponentProps> = ({
     case 'INSTANCE_SWAP': {
       label =
         '◇ ' +
-        (definitionOptions as PSComponentPropertyItemInstanceData).instanceData.find(
-          (s) => s.id === propValue
-        )?.name;
+        (
+          definitionOptions as PSComponentPropertyItemInstanceData
+        ).instanceData.find((s) => s.id === propValue)?.name;
       break;
     }
   }
@@ -78,27 +78,33 @@ export const VariantSelector: React.FC<NewComponentProps> = ({
           onChange={onChange}
         />
       ) : null}
-      {definitionOptions.type === 'INSTANCE_SWAP' && (
-        <span
-          onClick={() => {
-            sendPluginMessage({
-              type: 'focus-id',
-              data: instanceID,
-            });
-          }}
-          className={'mr-xxsmall'}
-          style={{ color: 'var(--grey-40)' }}
-        >
-          <IconInstance />
-        </span>
-      )}
+      {/*{definitionOptions.type === 'INSTANCE_SWAP' && (*/}
+      {/*  <span*/}
+      {/*    onClick={() => {*/}
+      {/*      sendPluginMessage({*/}
+      {/*        type: 'focus-id',*/}
+      {/*        data: instanceID,*/}
+      {/*      });*/}
+      {/*    }}*/}
+      {/*    className={'mr-xxsmall'}*/}
+      {/*    style={{ color: 'var(--grey-40)' }}*/}
+      {/*  >*/}
+      {/*    <IconInstance />*/}
+      {/*  </span>*/}
+      {/*)}*/}
     </div>
   );
 };
 
 function IconInstance() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <path
         fillRule="evenodd"
         clipRule="evenodd"
