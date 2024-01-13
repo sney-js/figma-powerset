@@ -32,7 +32,7 @@ function fetchMainFrame(name: string, instanceNode: InstanceNode) {
   }
   let frame = figma.createFrame();
   frame.name = name;
-  frame.resize(1500, 1000);
+  frame.resize(1584, 1000);
   frame.x = instanceNode.x + 1000;
   frame.y = instanceNode.y;
   frame.layoutPositioning = 'AUTO';
@@ -96,14 +96,19 @@ export async function layComponentGroup(
         newVariant.remove();
       }
       // --------- find and set properties on exposedInstances ----------
-      Object.keys(__exposedInstances).forEach((exposedInstanceId) => {
-        const exposedInstance = newVariant.findOne(
-          (n) => n.id.split(';')[1] === exposedInstanceId.split(';')[1]
-        );
-        if (isInstance(exposedInstance)) {
-          exposedInstance.setProperties(__exposedInstances[exposedInstanceId]);
-        }
-      });
+      const setExposedInstanceProperties = () => {
+        Object.keys(__exposedInstances).forEach((exposedInstanceId) => {
+          const exposedInstance = newVariant.findOne(
+            (n) => n.id.split(';')[1] === exposedInstanceId.split(';')[1]
+          );
+          if (isInstance(exposedInstance)) {
+            exposedInstance.setProperties(
+              __exposedInstances[exposedInstanceId]
+            );
+          }
+        });
+      };
+      if (__exposedInstances) setExposedInstanceProperties();
     });
 
     if (createdInstances) {

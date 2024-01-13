@@ -56,6 +56,27 @@ function formatExposedInstances(
   return responseData;
 }
 
+function TableHeader({
+  name,
+  currentIndex = 0,
+  total = 0,
+}: {
+  name: string;
+  currentIndex: number;
+  total: number;
+}) {
+  return (
+    <div className={'flex flex-between gap-1 sticky-exposed-instances-title'}>
+      <Label className={'text--grey-80'}>{`◇ ` + name}</Label>
+      {total > 0 ? (
+        <Label className={'justify-content-end'}>
+          {currentIndex + ' / ' + total}
+        </Label>
+      ) : null}
+    </div>
+  );
+}
+
 function App() {
   let instanceInfoInitialState = {
     name: null,
@@ -108,17 +129,12 @@ function App() {
       <InfoPanel isVariant={isVariant} compDefinitions={variants} />
 
       <div>
-        {name && (
-          <div
-            className={'flex flex-between gap-1 sticky-exposed-instances-title'}
-          >
-            <Label className={'text--grey-80'}>{`◇ ` + name}</Label>
-            {exposedInstances.length ? (
-              <Label className={'justify-content-end'}>
-                {1 + ' / ' + (exposedInstances.length + 1)}
-              </Label>
-            ) : null}
-          </div>
+        {name && isVariant && (
+          <TableHeader
+            name={name}
+            total={exposedInstances.length + 1}
+            currentIndex={1}
+          />
         )}
         <VariantDefinitions
           key={'table-' + id}
@@ -145,16 +161,11 @@ function App() {
         <div>
           {exposedInstances.map((def, i) => (
             <div className={i > 0 ? `pt-small` : ''}>
-              <div
-                className={
-                  'flex flex-between gap-1 sticky-exposed-instances-title'
-                }
-              >
-                <Label className={'text--grey-80'}>{`◇ ` + def.name}</Label>
-                <Label className={'justify-content-end'}>
-                  {i + 2 + ' / ' + (exposedInstances.length + 1)}
-                </Label>
-              </div>
+              <TableHeader
+                name={def.name}
+                total={exposedInstances.length + 1}
+                currentIndex={i + 2}
+              />
 
               <VariantDefinitions
                 key={'table-' + def.id}
