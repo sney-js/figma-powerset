@@ -1,5 +1,5 @@
 import {
-  PSComponentPropertyDefinitions,
+  PSComponentPropertyDefinitions, PSComponentPropertyItemBooleanData,
   PSComponentPropertyItemInstanceData,
   PSComponentPropertyItems,
 } from './Messages';
@@ -8,6 +8,11 @@ export const propIsInstanceType = (
   compProp: PSComponentPropertyItems,
 ): compProp is PSComponentPropertyItemInstanceData =>
   compProp.type === 'INSTANCE_SWAP';
+
+export const propIsBooleanType = (
+  compProp: PSComponentPropertyItems,
+): compProp is PSComponentPropertyItemBooleanData =>
+  compProp.type === 'BOOLEAN';
 
 export function sortPropsOfCompPropDef(compPropDef: PSComponentPropertyDefinitions) {
   return Object.keys(compPropDef).sort((a, b) => {

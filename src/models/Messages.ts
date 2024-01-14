@@ -13,7 +13,7 @@ export type PSMessage = {
   message?: string;
 };
 
-export type PSInstanceSwapPreferredValue = {
+export type PSLayerInfo = {
   name: string;
   id: string;
 };
@@ -24,6 +24,10 @@ export type PSComponentPropertyExposed = {
   variants?: PSComponentPropertyDefinitions;
   name: string;
   id: string;
+  /**
+   *  The value of these properties must be true for this exposedInstance to be valid..
+   */
+  disabledByProperty?: string[];
 }[];
 
 export type PSComponentPropertyItemInstanceData = Omit<
@@ -31,11 +35,20 @@ export type PSComponentPropertyItemInstanceData = Omit<
   'type'
 > & {
   type: 'INSTANCE_SWAP';
-  instanceData?: PSInstanceSwapPreferredValue[];
+  instanceData?: PSLayerInfo[];
+};
+
+export type PSComponentPropertyItemBooleanData = Omit<
+  PSComponentPropertyItem,
+  'type'
+> & {
+  type: 'BOOLEAN';
+  controlsLayers?: PSLayerInfo[];
 };
 
 export type PSComponentPropertyItems =
   | PSComponentPropertyItem
+  | PSComponentPropertyItemBooleanData
   | PSComponentPropertyItemInstanceData;
 
 export type PSComponentPropertyDefinitions = {

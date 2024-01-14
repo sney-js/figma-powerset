@@ -31,10 +31,12 @@ async function readSelection() {
 
     const componentDefinitions = await getMasterPropertiesDefinition(
       selection,
-      true
+      true,
     );
+
     const exposedInstancesDefinitions = await getExposedInstanceProperties(
       selection,
+      componentDefinitions,
       true
     );
 
@@ -75,7 +77,10 @@ const handlePluginMessage = async (message: PSMessage) => {
       break;
     case 'minimise-ui':
       minimiseUI = message.data.minimise === true;
-      figma.ui.resize(SHOW_UI_OPTIONS.width, minimiseUI ? 106 : SHOW_UI_OPTIONS.height)
+      figma.ui.resize(
+        SHOW_UI_OPTIONS.width,
+        minimiseUI ? 106 : SHOW_UI_OPTIONS.height
+      );
       break;
     case 'create-group':
       if (lastInstance && lastInstance.type === 'INSTANCE') {
