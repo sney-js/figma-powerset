@@ -1,9 +1,7 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 import '../styles/ui.css';
 import 'react-figma-plugin-ds/figma-plugin-ds.css';
-import { Disclosure, Icon, Label } from 'react-figma-plugin-ds';
 import {
-  ComponentGroup,
   PSMessage,
   PSMessage_Create,
   PSMessage_Definition,
@@ -15,67 +13,13 @@ import { sendPluginMessage } from '../utils/utils';
 import { Footer } from './Footer';
 import { Header } from './Header';
 import { InfoPanel } from './InfoPanel';
+import { TableHeader } from './TableHeader';
+import {
+  createDependencies,
+  flattenUserSelection,
+  formatExposedInstances,
+} from './utils/AppUtils';
 import { VariantDefinitions } from './VariantDefinitions';
-
-const flattenUserSelection = (
-  userSelections: Record<string, VariantDefPropsList>,
-  mainKey: string
-): VariantDefPropsList => {
-  let allSelections: VariantDefPropsList = {};
-  for (const propKey in userSelections) {
-    for (const prop in userSelections[propKey]) {
-      let propName = prop;
-      if (propKey !== mainKey) {
-        propName = propKey + '///' + prop;
-      }
-      allSelections[propName] = userSelections[propKey][prop];
-    }
-  }
-  return allSelections;
-};
-
-function formatExposedInstances(
-  powerset: Array<VariantProps>
-): ComponentGroup[number]['items'] {
-  const responseData: ComponentGroup[number]['items'] = [...powerset];
-  for (let i = 0; i < responseData.length; i++) {
-    responseData[i].__exposedInstances = {};
-    for (const prop in responseData[i]) {
-      let val = prop.split('///');
-      if (val[1]) {
-        let exposedInstanceItem = responseData[i].__exposedInstances[val[0]];
-
-        if (!exposedInstanceItem)
-          responseData[i].__exposedInstances[val[0]] = {};
-        responseData[i].__exposedInstances[val[0]][val[1]] =
-          responseData[i][prop];
-        delete responseData[i][prop];
-      }
-    }
-  }
-  return responseData;
-}
-
-function TableHeader({
-  name,
-  currentIndex = 0,
-  total = 0,
-}: {
-  name: string;
-  currentIndex: number;
-  total: number;
-}) {
-  return (
-    <div className={'flex flex-between gap-1 sticky-exposed-instances-title'}>
-      <Label className={'text--grey-80'}>{`◇ ` + name}</Label>
-      {total > 0 ? (
-        <Label className={'justify-content-end'}>
-          {currentIndex + ' / ' + total}
-        </Label>
-      ) : null}
-    </div>
-  );
-}
 
 function App() {
   let instanceInfoInitialState = {
@@ -117,8 +61,10 @@ function App() {
 
   useEffect(() => {
     if (!userSelections) return;
-    let allSelections = flattenUserSelection(userSelections, instanceInfo.id);
-    const pwrSet = generatePowerset(allSelections);
+    console.log(userSelections, 'userSelections');
+    const allSelections = flattenUserSelection(userSelections, instanceInfo.id);
+    const dependencies = createDependencies(allSelections, exposedInstances);
+    const pwrSet = generatePowerset(allSelections, dependencies);
     setPowerset(pwrSet);
   }, [userSelections]);
 
@@ -189,6 +135,7 @@ function App() {
           let responseData = exposedInstances.length
             ? formatExposedInstances(powerset)
             : powerset;
+          console.log(responseData, 'responseData');
           const pluginMessage: PSMessage_Create = {
             type: 'create-group',
             data: [{ group: name, items: responseData }],

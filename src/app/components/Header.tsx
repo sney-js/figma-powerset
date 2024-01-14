@@ -78,7 +78,7 @@ export function Header(props: { name: string | null; isVariant: boolean }) {
                 name={!minimiseUI ? 'minus' : 'plus'}
                 isSelected={minimiseUI}
                 onClick={() => {
-                  window.scroll({top:0, behavior: 'smooth'});
+                  window.scroll({ top: 0, behavior: 'smooth' });
                   setMinimiseUI(!minimiseUI);
                 }}
               />
@@ -87,7 +87,9 @@ export function Header(props: { name: string | null; isVariant: boolean }) {
         </div>
       </div>
       {help && (
-        <div className={'rich-text sticky p-small top-52 border-bottom-grey-10'}>
+        <div
+          className={'rich-text sticky p-small top-52 border-bottom-grey-10'}
+        >
           Powerset renders all permutations of a selected instance based on the
           values of its variant properties. The created combinations can help
           you QA your component library definitions, or showcase its
