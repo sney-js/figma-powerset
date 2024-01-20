@@ -33,7 +33,7 @@ export function getMasterComponent(
 function findPropertiesThatWillDisableThisInstance(
   instance: InstanceNode,
   componentDefinition: PSComponentPropertyDefinitions,
-  mainInstance: InstanceNode
+  topMostNode: SceneNode
 ): PSComponentPropertyExposed[number]['disabledByProperty'] {
   const disabledByProperties: string[] = [];
   for (let prop in componentDefinition) {
@@ -46,7 +46,7 @@ function findPropertiesThatWillDisableThisInstance(
         const parentWithProperty = findParentWith(
           instance,
           (parent) => (parent.id === s.id ? parent.id : null),
-          mainInstance
+          topMostNode
         );
         if (parentWithProperty) {
           disabledByProperties.push(prop);
@@ -63,21 +63,21 @@ export async function getExposedInstanceProperties(
   asyncComponentFetch: boolean
 ): Promise<PSComponentPropertyExposed> {
   const exposedInstances: PSComponentPropertyExposed = [];
+  const masterComponent = getMasterComponent(selection);
   for (const instance of selection.exposedInstances) {
-    const exposedVariantProperties: PSComponentPropertyDefinitions =
-      await getMasterPropertiesDefinition(instance, asyncComponentFetch);
-
-    const disabledByProperties = findPropertiesThatWillDisableThisInstance(
-      instance,
-      componentDefinition,
-      selection
-    );
-
+    console.log(instance.componentPropertyReferences, instance.name, 'XXX');
     exposedInstances.push({
-      variants: exposedVariantProperties,
+      variants: await getMasterPropertiesDefinition(
+        instance,
+        asyncComponentFetch
+      ),
       name: instance.name,
       id: instance.id,
-      disabledByProperty: disabledByProperties,
+      disabledByProperty: findPropertiesThatWillDisableThisInstance(
+        instance,
+        componentDefinition,
+        masterComponent
+      ),
     });
   }
   return exposedInstances;
@@ -89,11 +89,13 @@ export type FindLayerTypeGeneric<T> = PSLayerInfo & { value?: T };
  * the valueMapFunction with a 'defined' value
  * @param selection
  * @param valueMapFunc
+ * @param filterFunc - return true false to avoid traversing children of this node again
  * @return { {name:string, id:string, ?value:T}[] }
  */
 export const findChildrenWith = <T>(
   selection: SceneNode,
-  valueMapFunc?: (node: SceneNode) => T
+  valueMapFunc?: (node: SceneNode) => T,
+  filterFunc?: (node: SceneNode) => boolean
 ): FindLayerTypeGeneric<T>[] => {
   let ids: FindLayerTypeGeneric<T>[] = [];
 
@@ -106,9 +108,11 @@ export const findChildrenWith = <T>(
     }
   }
 
-  if ('children' in selection && selection.children?.length) {
+  let traverseNode = true;
+  if (filterFunc) traverseNode = filterFunc(selection);
+  if (traverseNode && 'children' in selection && selection.children?.length) {
     for (let child of selection.children) {
-      ids = ids.concat(findChildrenWith(child, valueMapFunc));
+      ids = ids.concat(findChildrenWith(child, valueMapFunc, filterFunc));
     }
   }
 
@@ -198,7 +202,11 @@ export async function getMasterPropertiesDefinition(
 
   const layersWithLayerVisibilityProperties = findChildrenWith<
     SceneNodeMixin['componentPropertyReferences']
-  >(selection, (inst) => objValue(inst.componentPropertyReferences));
+  >(
+    selection,
+    (inst) => objValue(inst.componentPropertyReferences),
+    (inst) => inst.id === selection.id || !isInstance(inst)
+  );
 
   for (const prop of Object.keys(compPropDef)) {
     const compPropDefEl: PSComponentPropertyItems = compPropDef[prop];
