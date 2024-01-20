@@ -18,37 +18,29 @@ export type PSLayerInfo = {
   id: string;
 };
 
-type PSComponentPropertyItem = ComponentPropertyDefinitions[string];
+export type PSComponentPropertyItem = ComponentPropertyDefinitions[string] & {
+  controlsLayers?: PSLayerInfo[];
+  disabledByProperty?: string[];
+};
 
-export type PSComponentPropertyExposed = {
+export type PSComponentPropertyExposed = (PSLayerInfo & {
   variants?: PSComponentPropertyDefinitions;
-  name: string;
-  id: string;
   /**
    *  The value of these properties must be true for this exposedInstance to be valid..
    */
   disabledByProperty?: string[];
-}[];
+})[];
 
 export type PSComponentPropertyItemInstanceData = Omit<
   PSComponentPropertyItem,
   'type'
 > & {
   type: 'INSTANCE_SWAP';
-  instanceData?: PSLayerInfo[];
-};
-
-export type PSComponentPropertyItemBooleanData = Omit<
-  PSComponentPropertyItem,
-  'type'
-> & {
-  type: 'BOOLEAN';
-  controlsLayers?: PSLayerInfo[];
+  instanceData?: PSComponentPropertyExposed;
 };
 
 export type PSComponentPropertyItems =
   | PSComponentPropertyItem
-  | PSComponentPropertyItemBooleanData
   | PSComponentPropertyItemInstanceData;
 
 export type PSComponentPropertyDefinitions = {

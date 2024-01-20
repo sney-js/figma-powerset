@@ -6,6 +6,7 @@ import {
   PSLayerInfo,
 } from '../models/Messages';
 import { propIsBooleanType, propIsInstanceType } from '../models/Utils';
+import { objValue } from './Utils';
 
 export function getMasterComponent(
   selection: InstanceNode | ComponentNode | ComponentSetNode | BaseNode
@@ -23,31 +24,37 @@ export function getMasterComponent(
   }
 }
 
-async function createInstanceData(
-  compPropDefEl: PSComponentPropertyItemInstanceData,
-  asyncComponentFetch: boolean
-): Promise<PSComponentPropertyItemInstanceData['instanceData']> {
-  let instanceData: PSComponentPropertyItemInstanceData['instanceData'] = [];
-  if (asyncComponentFetch) {
-    for (const pref of compPropDefEl.preferredValues) {
-      let compFetchFunc: Function =
-        pref.type === 'COMPONENT_SET'
-          ? figma.importComponentSetByKeyAsync
-          : figma.importComponentByKeyAsync;
-
-      await compFetchFunc(pref.key)
-        .then((node: ComponentNode | ComponentSetNode) => {
-          let { id, name } = node;
-          if (node.type === 'COMPONENT_SET') {
-            id = node.defaultVariant.id;
-          }
-          if (!propIsInstanceType(compPropDefEl)) return;
-          instanceData.push({ name, id });
-        })
-        .catch(console.error);
+/**
+ *  Setting powerset of instance swap or exposed instance is pointless if the parent
+ *  layer will be hidden due to its property. This renders duplicate instances that do not seem to
+ *  be distinct. This method finds properties that will disable this instance.
+ *  The value of these properties must be true for this instance to take effect.
+ */
+function findPropertiesThatWillDisableThisInstance(
+  instance: InstanceNode,
+  componentDefinition: PSComponentPropertyDefinitions,
+  mainInstance: InstanceNode
+): PSComponentPropertyExposed[number]['disabledByProperty'] {
+  const disabledByProperties: string[] = [];
+  for (let prop in componentDefinition) {
+    let variantProperty = componentDefinition[prop];
+    if (propIsBooleanType(variantProperty)) {
+      for (let s of variantProperty?.controlsLayers || []) {
+        if (instance.id.indexOf(s.id) === 0) {
+          disabledByProperties.push(prop);
+        }
+        const parentWithProperty = findParentWith(
+          instance,
+          (parent) => (parent.id === s.id ? parent.id : null),
+          mainInstance
+        );
+        if (parentWithProperty) {
+          disabledByProperties.push(prop);
+        }
+      }
     }
   }
-  return instanceData;
+  return disabledByProperties.length ? disabledByProperties : undefined;
 }
 
 export async function getExposedInstanceProperties(
@@ -56,40 +63,6 @@ export async function getExposedInstanceProperties(
   asyncComponentFetch: boolean
 ): Promise<PSComponentPropertyExposed> {
   const exposedInstances: PSComponentPropertyExposed = [];
-
-  /**
-   *  Setting powerset of exposedInstance is pointless if the parent
-   *  layer will be hidden due to its property. This renders duplicate instances that do not seem to
-   *  be distinct. This method finds properties that will disable this exposedInstance.
-   *  The value of these properties must be true for this exposedInstance to take effect.
-   */
-  function findPropertiesThatWillDisableThisInstance(
-    exposedInstance: InstanceNode,
-    componentDefinition: PSComponentPropertyDefinitions,
-    mainInstance: InstanceNode
-  ): string[] | undefined {
-    const disabledByProperties: string[] = [];
-    for (let prop in componentDefinition) {
-      let variantProperty = componentDefinition[prop];
-      if (propIsBooleanType(variantProperty)) {
-        for (let s of variantProperty.controlsLayers) {
-          if (exposedInstance.id.indexOf(s.id) === 0) {
-            disabledByProperties.push(prop);
-          }
-          const parentWithProperty = findParentWith(
-            exposedInstance,
-            (parent) => (parent.id === s.id ? parent.id : null),
-            mainInstance
-          );
-          if (parentWithProperty) {
-            disabledByProperties.push(prop);
-          }
-        }
-      }
-    }
-    return disabledByProperties.length ? disabledByProperties : undefined;
-  }
-
   for (const instance of selection.exposedInstances) {
     const exposedVariantProperties: PSComponentPropertyDefinitions =
       await getMasterPropertiesDefinition(instance, asyncComponentFetch);
@@ -141,7 +114,6 @@ export const findChildrenWith = <T>(
 
   return ids;
 };
-
 /**
  * Generic function that Finds all layers within children of children that satisfy
  * the valueMapFunction with a 'defined' value
@@ -187,6 +159,30 @@ export const createChildrenTree = (selection: SceneNode) => {
   return result;
 };
 
+async function generatePreferredValuesData(
+  preferredValue: InstanceSwapPreferredValue,
+  compPropDefEl: PSComponentPropertyItemInstanceData
+): Promise<
+  PSComponentPropertyItemInstanceData['instanceData'][number] | undefined
+> {
+  let compFetchFunc: Function =
+    preferredValue.type === 'COMPONENT_SET'
+      ? figma.importComponentSetByKeyAsync
+      : figma.importComponentByKeyAsync;
+
+  await compFetchFunc(preferredValue.key)
+    .then((node: ComponentNode | ComponentSetNode) => {
+      let { id, name } = node;
+      if (node.type === 'COMPONENT_SET') {
+        id = node.defaultVariant.id;
+      }
+      if (!propIsInstanceType(compPropDefEl)) return;
+      return { name, id };
+    })
+    .catch(console.error);
+  return undefined;
+}
+
 export async function getMasterPropertiesDefinition(
   selection: InstanceNode,
   asyncComponentFetch: boolean
@@ -202,15 +198,7 @@ export async function getMasterPropertiesDefinition(
 
   const layersWithLayerVisibilityProperties = findChildrenWith<
     SceneNodeMixin['componentPropertyReferences']
-  >(selection, (selection) => {
-    if (
-      selection.componentPropertyReferences !== null &&
-      Object.keys(selection.componentPropertyReferences).length
-    ) {
-      return selection.componentPropertyReferences;
-    }
-    return null;
-  });
+  >(selection, (inst) => objValue(inst.componentPropertyReferences));
 
   for (const prop of Object.keys(compPropDef)) {
     const compPropDefEl: PSComponentPropertyItems = compPropDef[prop];
@@ -235,11 +223,18 @@ export async function getMasterPropertiesDefinition(
       }
       case 'INSTANCE_SWAP': {
         if (!propIsInstanceType(compPropDefEl)) return;
-        compPropDefEl.instanceData = await createInstanceData(
-          compPropDefEl,
-          asyncComponentFetch
-        );
 
+        if (asyncComponentFetch) {
+          let instanceData: PSComponentPropertyItemInstanceData['instanceData'] =
+            await Promise.all(
+              compPropDefEl.preferredValues.map((pref) =>
+                generatePreferredValuesData(pref, compPropDefEl)
+              )
+            );
+          compPropDefEl.instanceData = instanceData.filter(Boolean);
+        }
+
+        // current added instance that may not be found in preferred instances
         const prefInstanceId = currentInstancePropValue as string;
         if (
           !compPropDefEl.instanceData.some(({ id }) => id === prefInstanceId)
