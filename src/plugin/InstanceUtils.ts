@@ -128,6 +128,7 @@ export const findChildrenWith = <T>(
 
   return ids;
 };
+
 /**
  * Generic function that Finds all layers within children of children that satisfy
  * the valueMapFunction with a 'defined' value
@@ -175,7 +176,8 @@ export const createChildrenTree = (selection: SceneNode) => {
 
 async function generatePreferredValuesData(
   preferredValue: InstanceSwapPreferredValue,
-  compPropDefEl: PSComponentPropertyItemInstanceData
+  compPropDefEl: PSComponentPropertyItemInstanceData,
+  currentSelectedId: string
 ): Promise<
   PSComponentPropertyItemInstanceData['instanceData'][number] | undefined
 > {
@@ -184,17 +186,22 @@ async function generatePreferredValuesData(
       ? figma.importComponentSetByKeyAsync
       : figma.importComponentByKeyAsync;
 
-  await compFetchFunc(preferredValue.key)
+  return await compFetchFunc(preferredValue.key)
     .then((node: ComponentNode | ComponentSetNode) => {
       let { id, name } = node;
       if (node.type === 'COMPONENT_SET') {
         id = node.defaultVariant.id;
       }
+      if (id === currentSelectedId) {
+        name += ' (Current)';
+      }
       if (!propIsInstanceType(compPropDefEl)) return;
       return { name, id };
     })
-    .catch(console.error);
-  return undefined;
+    .catch((e) => {
+      console.error(e);
+      return undefined;
+    });
 }
 
 const createPropertyDependencies = (
@@ -280,29 +287,33 @@ export async function getMasterPropertiesDefinition(
       }
       case 'INSTANCE_SWAP': {
         if (!propIsInstanceType(compPropDefEl)) return;
+        const prefInstanceId = currentInstancePropValue as string;
+        compPropDefEl.defaultValue = currentInstancePropValue;
 
         if (asyncComponentFetch) {
           let instanceData: PSComponentPropertyItemInstanceData['instanceData'] =
             await Promise.all(
-              compPropDefEl.preferredValues.map((pref) =>
-                generatePreferredValuesData(pref, compPropDefEl)
-              )
+              compPropDefEl.preferredValues.map(async (pref) => {
+                return await generatePreferredValuesData(
+                  pref,
+                  compPropDefEl,
+                  String(currentInstancePropValue)
+                );
+              })
             );
-          compPropDefEl.instanceData = instanceData.filter(Boolean);
-        }
 
-        // current added instance that may not be found in preferred instances
-        const prefInstanceId = currentInstancePropValue as string;
-        if (
-          !compPropDefEl.instanceData.some(({ id }) => id === prefInstanceId)
-        ) {
-          const prevInstanceNode = getMasterComponent(
-            figma.getNodeById(prefInstanceId)
-          )?.name;
-          compPropDefEl.instanceData.push({
-            name: prevInstanceNode + ' (Current)',
-            id: prefInstanceId,
-          });
+          // current added instance that may not be found in preferred instances
+          if (!instanceData.some(({ id }) => id === prefInstanceId)) {
+            const prevInstanceNode = getMasterComponent(
+              figma.getNodeById(prefInstanceId)
+            )?.name;
+            instanceData.push({
+              name: prevInstanceNode + ' (Current)',
+              id: prefInstanceId,
+            });
+          }
+
+          compPropDefEl.instanceData = instanceData.filter(Boolean);
         }
 
         break;
