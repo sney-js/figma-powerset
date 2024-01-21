@@ -256,13 +256,6 @@ export async function getMasterPropertiesDefinition(
         if (currentInstancePropValue) {
           compPropDefEl.defaultValue = currentInstancePropValue;
         }
-        const layerProperties = prop.split('#')[1];
-        if (layerProperties) {
-          const visibleLayers = childLayersPropertyReferences
-            .filter((v) => v.value.visible === prop)
-            .map((c) => ({ name: c.name, id: c.id }));
-          compPropDefEl.controlsLayers = visibleLayers;
-        }
 
         break;
       }

@@ -19,7 +19,6 @@ export type PSLayerInfo = {
 };
 
 export type PSComponentPropertyItem = ComponentPropertyDefinitions[string] & {
-  controlsLayers?: PSLayerInfo[];
   disabledByProperty?: string[];
 };
 
