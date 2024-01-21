@@ -110,6 +110,7 @@ function App() {
                 name={def.name}
                 total={exposedInstances.length + 1}
                 currentIndex={i + 2}
+                disabledByProperty={def.disabledByProperty}
               />
 
               <VariantDefinitions

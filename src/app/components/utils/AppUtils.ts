@@ -10,8 +10,9 @@ const ExposedInstanceUtil = {
   makeKey: (instanceKey: string, propName: string) => {
     return instanceKey + '///' + propName;
   },
-  decodeKey: (propKey: string) => {
-    return propKey.split('///');
+  decodeKey: (propKey: string): string[] | undefined => {
+    let exposedPattern = propKey.split('///');
+    return exposedPattern[1] ? exposedPattern : [];
   },
 } as const;
 
@@ -63,12 +64,33 @@ export const createDependencies = (
 ): Record<string, string[]> => {
   const dependencies: Record<string, string[]> = {};
   Object.keys(allSelections).forEach((key) => {
-    const [instanceKey] = ExposedInstanceUtil.decodeKey(key);
-    let disabledProperties = exposedInstances.find((s) => s.id === instanceKey)
-      ?.disabledByProperty;
+    let disabledProperties: string[];
 
-    if (!disabledProperties && compDef[key]) {
+    // current prop dependencies
+    if (compDef[key]) {
       disabledProperties = compDef[key].disabledByProperty;
+    }
+
+    // exposed instances prop dependencies
+    const [exposedInstanceKey, exposedInstanceProp] =
+      ExposedInstanceUtil.decodeKey(key);
+    if (exposedInstanceKey) {
+      let exposedInstanceCompDef = exposedInstances.find(
+        (s) => s.id === exposedInstanceKey
+      );
+      const entireExposedInstanceDisabledBy =
+        exposedInstanceCompDef?.disabledByProperty;
+      const exposedInstancePropDisabledBy = exposedInstanceCompDef.variants[
+        exposedInstanceProp
+      ].disabledByProperty?.map((s) =>
+        ExposedInstanceUtil.makeKey(exposedInstanceKey, s)
+      );
+      disabledProperties = Array.from(
+        new Set([
+          ...(exposedInstancePropDisabledBy || []),
+          ...(entireExposedInstanceDisabledBy || []),
+        ])
+      );
     }
     if (disabledProperties && disabledProperties.length) {
       dependencies[key] = disabledProperties;

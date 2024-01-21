@@ -24,60 +24,36 @@ export function getMasterComponent(
   }
 }
 
-/**
- *  Setting powerset of instance swap or exposed instance is pointless if the parent
- *  layer will be hidden due to its property. This renders duplicate instances that do not seem to
- *  be distinct. This method finds properties that will disable this instance.
- *  The value of these properties must be true for this instance to take effect.
- */
-function findPropertiesThatWillDisableThisInstance(
-  instance: InstanceNode,
-  componentDefinition: PSComponentPropertyDefinitions,
-  topMostNode: SceneNode
-): PSComponentPropertyExposed[number]['disabledByProperty'] {
-  const disabledByProperties: string[] = [];
-  for (let prop in componentDefinition) {
-    let variantProperty = componentDefinition[prop];
-    if (propIsBooleanType(variantProperty)) {
-      for (let s of variantProperty?.controlsLayers || []) {
-        if (instance.id.indexOf(s.id) === 0) {
-          disabledByProperties.push(prop);
-        }
-        const parentWithProperty = findParentWith(
-          instance,
-          (parent) => (parent.id === s.id ? parent.id : null),
-          topMostNode
-        );
-        if (parentWithProperty) {
-          disabledByProperties.push(prop);
-        }
-      }
-    }
-  }
-  return disabledByProperties.length ? disabledByProperties : undefined;
-}
-
 export async function getExposedInstanceProperties(
   selection: InstanceNode,
-  componentDefinition: PSComponentPropertyDefinitions,
   asyncComponentFetch: boolean
 ): Promise<PSComponentPropertyExposed> {
   const exposedInstances: PSComponentPropertyExposed = [];
-  const masterComponent = getMasterComponent(selection);
-  for (const instance of selection.exposedInstances) {
-    console.log(instance.componentPropertyReferences, instance.name, 'XXX');
+  let instanceNode = selection;
+
+  const childLayersPropertyReferences =
+    createPropertyDependencies(instanceNode);
+
+  for (const exInstance of instanceNode.exposedInstances) {
+    let disabledByProperty: string[];
+    const availableFrames = childLayersPropertyReferences.filter(
+      (s) => s.name === exInstance.name
+    );
+    const exposedInstanceFrame = availableFrames.find(
+      (s) => exInstance.id.indexOf(s.id) !== -1
+    );
+    if (exposedInstanceFrame) {
+      disabledByProperty = exposedInstanceFrame.dependencies;
+    }
+
     exposedInstances.push({
       variants: await getMasterPropertiesDefinition(
-        instance,
+        exInstance,
         asyncComponentFetch
       ),
-      name: instance.name,
-      id: instance.id,
-      disabledByProperty: findPropertiesThatWillDisableThisInstance(
-        instance,
-        componentDefinition,
-        masterComponent
-      ),
+      name: exInstance.name,
+      id: exInstance.id,
+      disabledByProperty: disabledByProperty,
     });
   }
   return exposedInstances;
@@ -211,19 +187,22 @@ const createPropertyDependencies = (
 })[] => {
   const masterComponent: ComponentSetNode | ComponentNode =
     getMasterComponent(selection);
-  let childLayersPropertyReferences: FindLayerTypeGeneric<
+
+  const childLayersPropertyReferences = findChildrenWith<
     SceneNodeMixin['componentPropertyReferences']
-  >[] = findChildrenWith<SceneNodeMixin['componentPropertyReferences']>(
+  >(
     masterComponent,
     (inst) => objValue(inst.componentPropertyReferences),
     (inst) => inst.id === selection.id || !isInstance(inst)
   );
 
-  function findParents(parentId = null, depth = 0) {
+  function findParents(parentId: string = null, depth = 0) {
     const item = childLayersPropertyReferences.find(
       (item) => item.id === parentId
     );
-    if (depth > 0 && item?.value?.visible) return [item.value.visible];
+    if (depth >= 0 && item?.value?.visible && !item?.skippedParent) {
+      return [item.value.visible];
+    }
     if (item?.skippedParent) {
       return Array.from(
         new Set([...findParents(item.skippedParent, ++depth)].filter(Boolean))
@@ -265,7 +244,9 @@ export async function getMasterPropertiesDefinition(
       Object.values(v.value).find((s) => s === prop)
     )?.dependencies;
     if (disabledByProperty?.length) {
-      compPropDefEl.disabledByProperty = disabledByProperty;
+      compPropDefEl.disabledByProperty = disabledByProperty.filter(
+        (s) => s !== prop
+      );
     }
 
     switch (compPropDefEl.type) {
@@ -330,8 +311,17 @@ export async function getMasterPropertiesDefinition(
 }
 
 export function isInstance(selection: SceneNode): selection is InstanceNode {
-  // || selection.type === 'COMPONENT' || selection.type === 'COMPONENT_SET';
   return selection && selection.type === 'INSTANCE';
+}
+
+export function isComponentSet(
+  selection: SceneNode
+): selection is ComponentSetNode {
+  return selection && selection.type === 'COMPONENT_SET';
+}
+
+export function isComponent(selection: SceneNode): selection is ComponentNode {
+  return selection && selection.type === 'COMPONENT';
 }
 
 export function instanceExists(instance?: InstanceNode) {

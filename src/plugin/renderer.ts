@@ -108,7 +108,9 @@ export async function layComponentGroup(
           }
         });
       };
-      if (__exposedInstances) setExposedInstanceProperties();
+      try {
+        if (__exposedInstances) setExposedInstanceProperties();
+      } catch (e) {}
     });
 
     if (createdInstances) {

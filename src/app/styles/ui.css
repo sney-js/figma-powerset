@@ -116,6 +116,10 @@ hr {
   pointer-events: none;
 }
 
+.w-100 {
+  width: 100%;
+}
+
 .gap-1 {
   gap: var(--sp-xs);
 }
@@ -259,6 +263,9 @@ hr {
   }
   .icon-button:not(.icon-button--selected):disabled {
     background-color: var(--grey-80);
+  }
+  .checkbox__box:disabled + .checkbox__label {
+    color: var(--black3) !important;
   }
 }
 

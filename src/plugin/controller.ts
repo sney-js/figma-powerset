@@ -36,7 +36,6 @@ async function readSelection() {
 
     const exposedInstancesDefinitions = await getExposedInstanceProperties(
       selection,
-      componentDefinitions,
       true
     );
 
