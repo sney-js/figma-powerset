@@ -136,6 +136,10 @@ hr {
   top: 52px;
 }
 
+.m-0 {
+  margin: 0;
+}
+
 .pt-s {
   padding-top: var(--sp-base);
 }
@@ -154,6 +158,10 @@ hr {
 
 .text--grey-80 {
   color: var(--grey-80) !important;
+}
+
+.text--grey-20 {
+  color: var(--grey-20) !important;
 }
 
 .flex-between {

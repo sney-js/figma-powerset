@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Checkbox, Label, Text } from 'react-figma-plugin-ds';
 import {
   PSComponentPropertyDefinitions,
-  PSComponentPropertyExposed,
   PSComponentPropertyItemInstanceData,
   VariantDefPropsList,
   VariantDefType,
 } from '../../models/Messages';
 import { sortPropsOfCompPropDef } from '../../models/Utils';
+import { arrValue } from '../../plugin/Utils';
+import { IconDependency } from './elements/Icons';
 import { VariantSelector } from './VariantSelector';
 
 type VariantDefinitionsParams = {
@@ -32,7 +33,8 @@ function createUIVariantDefinitions(
   definitions: PSComponentPropertyDefinitions
 ): VariantDefPropsList {
   const uiDef: VariantDefPropsList = {};
-  const sortedProps = sortPropsOfCompPropDef(definitions);
+  const sortedProps =
+    sortPropsOfCompPropDef(definitions) || Object.keys(definitions);
   sortedProps.forEach((key) => {
     const val = definitions[key];
     switch (val.type) {
@@ -94,10 +96,10 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
             <th style={{ width: '30px' }}>
               <Label>#</Label>
             </th>
-            <th style={{ width: '33%' }}>
+            <th style={{ width: '275px' }}>
               <Label>Properties</Label>
             </th>
-            <th style={{ width: '63%' }}>
+            <th style={{ width: '58%' }}>
               <Checkbox
                 className={`flex-grow`}
                 label={'All Values'}
@@ -125,9 +127,19 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
                 <Label>{i + 1}.</Label>
               </td>
               <td>
-                <Text className={'pl-xxsmall pr-xxsmall'}>
-                  {propName.split('#')[0]}
-                </Text>
+                <div className={'p-xxsmall'}>
+                  <Text className={'m-0'}>
+                    {propName.split('#')[0]}
+                  </Text>
+                  {arrValue(compDefinitions[propName].disabledByProperty) ? (
+                    <Text className={'m-0 pt-xxxsmall text--grey-20'}>
+                      <IconDependency />{' '}
+                      {compDefinitions[propName].disabledByProperty
+                        ?.map((s) => s.split('#')[0])
+                        .join(',')}
+                    </Text>
+                  ) : null}
+                </div>
               </td>
               <td>
                 <div className={'table_variant-selector_item'}>
@@ -139,6 +151,12 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
                       );
                     }
                     let varDef = compDefinitions[propName];
+                    let isEnabled =
+                      !varDef.disabledByProperty ||
+                      !varDef.disabledByProperty.length ||
+                      varDef.disabledByProperty.some((pr) =>
+                        userDefinitions[pr].find((v) => v === true)
+                      );
                     // let exposedInstance = propName.split('{>}');
                     // if (exposedInstance[1]) {
                     //   let propFed = compDefinitions[exposedInstance[0]];
@@ -152,6 +170,7 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
                         propValue={propValue}
                         defaultChecked={defaultChecked}
                         definitionOptions={varDef}
+                        disabled={!isEnabled}
                         key={[
                           propName,
                           propValue,

@@ -61,9 +61,8 @@ function App() {
 
   useEffect(() => {
     if (!userSelections) return;
-    console.log(userSelections, 'userSelections');
     const allSelections = flattenUserSelection(userSelections, instanceInfo.id);
-    const dependencies = createDependencies(allSelections, exposedInstances);
+    const dependencies = createDependencies(allSelections, variants, exposedInstances);
     const pwrSet = generatePowerset(allSelections, dependencies);
     setPowerset(pwrSet);
   }, [userSelections]);

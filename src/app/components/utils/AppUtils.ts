@@ -1,5 +1,6 @@
 import {
   ComponentGroup,
+  PSComponentPropertyDefinitions,
   PSComponentPropertyExposed,
   VariantDefPropsList,
   VariantProps,
@@ -55,19 +56,23 @@ export function formatExposedInstances(
   return responseData;
 }
 
-export function createDependencies(
+export const createDependencies = (
   allSelections: VariantDefPropsList,
+  compDef: PSComponentPropertyDefinitions,
   exposedInstances: PSComponentPropertyExposed
-) {
+): Record<string, string[]> => {
   const dependencies: Record<string, string[]> = {};
   Object.keys(allSelections).forEach((key) => {
     const [instanceKey] = ExposedInstanceUtil.decodeKey(key);
-    const disabledProperties = exposedInstances.find(
-      (s) => s.id === instanceKey
-    )?.disabledByProperty;
+    let disabledProperties = exposedInstances.find((s) => s.id === instanceKey)
+      ?.disabledByProperty;
+
+    if (!disabledProperties && compDef[key]) {
+      disabledProperties = compDef[key].disabledByProperty;
+    }
     if (disabledProperties && disabledProperties.length) {
       dependencies[key] = disabledProperties;
     }
   });
   return dependencies;
-}
+};
