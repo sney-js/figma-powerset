@@ -247,13 +247,6 @@ export async function getMasterPropertiesDefinition(
     ...(masterDef as ComponentPropertyDefinitions),
   };
 
-  const layersWithLayerVisibilityProperties = findChildrenWith<
-    SceneNodeMixin['componentPropertyReferences']
-  >(
-    selection,
-    (inst) => objValue(inst.componentPropertyReferences),
-    (inst) => inst.id === selection.id || !isInstance(inst)
-  );
   const childLayersPropertyReferences = createPropertyDependencies(selection);
 
 
