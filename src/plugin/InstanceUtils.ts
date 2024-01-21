@@ -83,36 +83,46 @@ export async function getExposedInstanceProperties(
   return exposedInstances;
 }
 
-export type FindLayerTypeGeneric<T> = PSLayerInfo & { value?: T };
+export type FindLayerTypeGeneric<T> = PSLayerInfo & {
+  value?: T;
+  skippedParent?: string;
+};
 /**
  * Generic function that Finds all layers within children of children that satisfy
  * the valueMapFunction with a 'defined' value
  * @param selection
  * @param valueMapFunc
  * @param filterFunc - return true false to avoid traversing children of this node again
+ * @param parentId
  * @return { {name:string, id:string, ?value:T}[] }
  */
 export const findChildrenWith = <T>(
   selection: SceneNode,
-  valueMapFunc?: (node: SceneNode) => T,
-  filterFunc?: (node: SceneNode) => boolean
+  valueMapFunc: (node: SceneNode) => T,
+  filterFunc?: (node: SceneNode) => boolean,
+  parentId?: string
 ): FindLayerTypeGeneric<T>[] => {
   let ids: FindLayerTypeGeneric<T>[] = [];
 
-  if (!valueMapFunc) {
-    ids.push({ name: selection.name, id: selection.id });
-  } else {
-    const value = valueMapFunc(selection);
-    if (value) {
-      ids.push({ name: selection.name, id: selection.id, value: value });
-    }
+  let skippedParent = parentId;
+  const value = valueMapFunc(selection);
+  if (value) {
+    ids.push({
+      name: selection.name,
+      id: selection.id,
+      value: value,
+      skippedParent: parentId,
+    });
+    skippedParent = selection.id;
   }
 
   let traverseNode = true;
   if (filterFunc) traverseNode = filterFunc(selection);
   if (traverseNode && 'children' in selection && selection.children?.length) {
     for (let child of selection.children) {
-      ids = ids.concat(findChildrenWith(child, valueMapFunc, filterFunc));
+      ids = ids.concat(
+        findChildrenWith(child, valueMapFunc, filterFunc, skippedParent)
+      );
     }
   }
 
@@ -187,18 +197,55 @@ async function generatePreferredValuesData(
   return undefined;
 }
 
+const createPropertyDependencies = (
+  selection: InstanceNode
+): (FindLayerTypeGeneric<SceneNodeMixin['componentPropertyReferences']> & {
+  dependencies: string[];
+})[] => {
+  const masterComponent: ComponentSetNode | ComponentNode =
+    getMasterComponent(selection);
+  let childLayersPropertyReferences: FindLayerTypeGeneric<
+    SceneNodeMixin['componentPropertyReferences']
+  >[] = findChildrenWith<SceneNodeMixin['componentPropertyReferences']>(
+    masterComponent,
+    (inst) => objValue(inst.componentPropertyReferences),
+    (inst) => inst.id === selection.id || !isInstance(inst)
+  );
+
+  function findParents(parentId = null, depth = 0) {
+    const item = childLayersPropertyReferences.find(
+      (item) => item.id === parentId
+    );
+    if (depth > 0 && item?.value?.visible) return [item.value.visible];
+    if (item?.skippedParent) {
+      return Array.from(
+        new Set([...findParents(item.skippedParent, ++depth)].filter(Boolean))
+      );
+    }
+    return [];
+  }
+
+  return childLayersPropertyReferences.map((item) => {
+    let dependencies = findParents(item.id);
+    return { ...item, dependencies: dependencies };
+  });
+};
+
 export async function getMasterPropertiesDefinition(
   selection: InstanceNode,
   asyncComponentFetch: boolean
 ): Promise<PSComponentPropertyDefinitions> {
   if (!selection) return null;
 
-  const masterComponent = getMasterComponent(selection);
-  let masterDef: PSComponentPropertyDefinitions =
+  const masterComponent: ComponentSetNode | ComponentNode =
+    getMasterComponent(selection);
+  const masterDef: ComponentPropertyDefinitions =
     masterComponent?.componentPropertyDefinitions;
   if (!masterDef) return masterDef;
   const currentDefinitions = selection.componentProperties;
-  const compPropDef: PSComponentPropertyDefinitions = { ...masterDef };
+  const compPropDef: PSComponentPropertyDefinitions = {
+    ...(masterDef as ComponentPropertyDefinitions),
+  };
 
   const layersWithLayerVisibilityProperties = findChildrenWith<
     SceneNodeMixin['componentPropertyReferences']
@@ -207,10 +254,19 @@ export async function getMasterPropertiesDefinition(
     (inst) => objValue(inst.componentPropertyReferences),
     (inst) => inst.id === selection.id || !isInstance(inst)
   );
+  const childLayersPropertyReferences = createPropertyDependencies(selection);
+
 
   for (const prop of Object.keys(compPropDef)) {
     const compPropDefEl: PSComponentPropertyItems = compPropDef[prop];
     const currentInstancePropValue = currentDefinitions[prop]?.value;
+
+    const disabledByProperty = childLayersPropertyReferences.find((v) =>
+      Object.values(v.value).find((s) => s === prop)
+    )?.dependencies;
+    if (disabledByProperty?.length) {
+      compPropDefEl.disabledByProperty = disabledByProperty;
+    }
 
     switch (compPropDefEl.type) {
       case 'BOOLEAN': {
@@ -221,7 +277,7 @@ export async function getMasterPropertiesDefinition(
         }
         const layerProperties = prop.split('#')[1];
         if (layerProperties) {
-          const visibleLayers = layersWithLayerVisibilityProperties
+          const visibleLayers = childLayersPropertyReferences
             .filter((v) => v.value.visible === prop)
             .map((c) => ({ name: c.name, id: c.id }));
           compPropDefEl.controlsLayers = visibleLayers;
