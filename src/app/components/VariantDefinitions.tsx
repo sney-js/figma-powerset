@@ -15,6 +15,7 @@ type VariantDefinitionsParams = {
   readonly compDefinitions: PSComponentPropertyDefinitions;
   infoData: { name: string; id: string };
   onUserSelect: (userSelections: VariantDefPropsList) => void;
+  enable?: boolean;
 };
 const TextHelperList = [
   ['Words', 'Lorem ipsum dolor sit'],
@@ -63,7 +64,7 @@ function createUIVariantDefinitions(
 }
 
 export function VariantDefinitions(props: VariantDefinitionsParams) {
-  const { compDefinitions, infoData, onUserSelect } = props;
+  const { compDefinitions, infoData, onUserSelect, enable = true } = props;
 
   const [uiDefinitions, setUiDefinitions] = useState<VariantDefPropsList>();
   const [userDefinitions, setUserDefinitions] = useState<VariantDefPropsList>();
@@ -105,6 +106,7 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
                 label={'All Values'}
                 name={[infoData.id, 'all-values'].join('.')}
                 defaultValue={false}
+                isDisabled={!enable}
                 onChange={(_checked) => {
                   let newDef = { ...userDefinitions };
                   if (_checked) {
@@ -128,9 +130,7 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
               </td>
               <td>
                 <div className={'p-xxsmall'}>
-                  <Text className={'m-0'}>
-                    {propName.split('#')[0]}
-                  </Text>
+                  <Text className={'m-0'}>{propName.split('#')[0]}</Text>
                   {arrValue(compDefinitions[propName].disabledByProperty) ? (
                     <Text className={'m-0 pt-xxxsmall text--grey-20'}>
                       <IconDependency />{' '}
@@ -151,19 +151,16 @@ export function VariantDefinitions(props: VariantDefinitionsParams) {
                       );
                     }
                     let varDef = compDefinitions[propName];
+                    let disabledProps = varDef.disabledByProperty || [];
                     let isEnabled =
-                      !varDef.disabledByProperty ||
-                      !varDef.disabledByProperty.length ||
-                      varDef.disabledByProperty.some((pr) =>
-                        userDefinitions[pr].find((v) => v === true)
-                      );
-                    // let exposedInstance = propName.split('{>}');
-                    // if (exposedInstance[1]) {
-                    //   let propFed = compDefinitions[exposedInstance[0]];
-                    //   if (propIsExposedInstanceType(propFed)) {
-                    //     varDef = propFed.properties[exposedInstance[1]];
-                    //   }
-                    // }
+                      !arrValue(disabledProps) ||
+                      disabledProps.every((pr) => {
+                        const [propName, propValue = true] = pr.split('=');
+                        return userDefinitions[propName].find(
+                          (v) => v === propValue
+                        );
+                      });
+                    if (isEnabled && !enable) isEnabled = enable;
                     return (
                       <VariantSelector
                         propName={propName}

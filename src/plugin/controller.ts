@@ -31,12 +31,13 @@ async function readSelection() {
 
     const componentDefinitions = await getMasterPropertiesDefinition(
       selection,
-      true,
+      true
     );
 
     const exposedInstancesDefinitions = await getExposedInstanceProperties(
       selection,
-      true
+      true,
+      componentDefinitions
     );
 
     lastInstance = selection;

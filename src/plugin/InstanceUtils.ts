@@ -6,7 +6,7 @@ import {
   PSLayerInfo,
 } from '../models/Messages';
 import { propIsBooleanType, propIsInstanceType } from '../models/Utils';
-import { objValue } from './Utils';
+import { arrValue, objValue } from './Utils';
 
 export function getMasterComponent(
   selection: InstanceNode | ComponentNode | ComponentSetNode | BaseNode
@@ -26,7 +26,8 @@ export function getMasterComponent(
 
 export async function getExposedInstanceProperties(
   selection: InstanceNode,
-  asyncComponentFetch: boolean
+  asyncComponentFetch: boolean,
+  compDef: PSComponentPropertyDefinitions
 ): Promise<PSComponentPropertyExposed> {
   const exposedInstances: PSComponentPropertyExposed = [];
   let instanceNode = selection;
@@ -44,6 +45,11 @@ export async function getExposedInstanceProperties(
     );
     if (exposedInstanceFrame) {
       disabledByProperty = exposedInstanceFrame.dependencies;
+      const mainComponent = exposedInstanceFrame.value?.mainComponent;
+      if (mainComponent) {
+        const dProp = `${mainComponent}=${compDef[mainComponent].defaultValue}`;
+        disabledByProperty.push(dProp);
+      }
     }
 
     exposedInstances.push({
@@ -53,7 +59,7 @@ export async function getExposedInstanceProperties(
       ),
       name: exInstance.name,
       id: exInstance.id,
-      disabledByProperty: disabledByProperty,
+      disabledByProperty: arrValue(disabledByProperty) || [],
     });
   }
   return exposedInstances;
@@ -235,7 +241,6 @@ export async function getMasterPropertiesDefinition(
 
   const childLayersPropertyReferences = createPropertyDependencies(selection);
 
-
   for (const prop of Object.keys(compPropDef)) {
     const compPropDefEl: PSComponentPropertyItems = compPropDef[prop];
     const currentInstancePropValue = currentDefinitions[prop]?.value;
@@ -275,6 +280,7 @@ export async function getMasterPropertiesDefinition(
                 );
               })
             );
+          instanceData = instanceData.filter((s) => s?.id);
 
           // current added instance that may not be found in preferred instances
           if (!instanceData.some(({ id }) => id === prefInstanceId)) {

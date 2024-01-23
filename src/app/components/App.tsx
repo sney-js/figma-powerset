@@ -8,6 +8,7 @@ import {
   VariantDefPropsList,
   VariantProps,
 } from '../../models/Messages';
+import { objValue } from '../../plugin/Utils';
 import { generatePowerset } from '../utils/Combinatrics';
 import { sendPluginMessage } from '../utils/utils';
 import { Footer } from './Footer';
@@ -43,7 +44,7 @@ function App() {
       const { type, data } = pluginMessage;
       switch (type) {
         case 'properties-list': {
-          console.log(data, 'data');
+          // console.log(data, 'data');
           setInstanceInfo(data);
           break;
         }
@@ -62,12 +63,25 @@ function App() {
   useEffect(() => {
     if (!userSelections) return;
     const allSelections = flattenUserSelection(userSelections, instanceInfo.id);
-    const dependencies = createDependencies(allSelections, variants, exposedInstances);
+    const dependencies = createDependencies(
+      allSelections,
+      variants,
+      exposedInstances
+    );
     const pwrSet = generatePowerset(allSelections, dependencies);
     setPowerset(pwrSet);
   }, [userSelections]);
 
   const { variants, name, exposedInstances, id, isVariant } = instanceInfo;
+
+  const exposedInstanceIsEnabled = (disabledByProperty: string[]) =>
+    userSelections &&
+    objValue(userSelections[id]) &&
+    disabledByProperty.every((pr) => {
+      const [propName, propValue = true] = pr.split('=');
+      return userSelections[id][propName].find((v) => v === propValue);
+    });
+
   return (
     <div className={'container'}>
       <Header name={name} isVariant={isVariant} />
@@ -79,6 +93,7 @@ function App() {
             name={name}
             total={exposedInstances.length + 1}
             currentIndex={1}
+            disabledByProperty={undefined}
           />
         )}
         <VariantDefinitions
@@ -117,6 +132,7 @@ function App() {
                 key={'table-' + def.id}
                 compDefinitions={def.variants}
                 infoData={{ name: def.name, id: def.id }}
+                enable={exposedInstanceIsEnabled(def.disabledByProperty)}
                 onUserSelect={(data: VariantDefPropsList) => {
                   const curr = userSelections ? { ...userSelections } : {};
                   curr[def.id] = data;
@@ -135,7 +151,6 @@ function App() {
           let responseData = exposedInstances.length
             ? formatExposedInstances(powerset)
             : powerset;
-          console.log(responseData, 'responseData');
           const pluginMessage: PSMessage_Create = {
             type: 'create-group',
             data: [{ group: name, items: responseData }],

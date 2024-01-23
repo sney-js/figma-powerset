@@ -18,7 +18,10 @@ function reducePowersetUsingDependencies(
     Object.keys(newCombination).forEach((key) => {
       if (
         dependencies[key] &&
-        !dependencies[key].every((dep) => newCombination[dep] === true)
+        !dependencies[key].every((dep: string) => {
+          const [propName, propValue = true] = dep.split('=');
+          return newCombination[propName] === propValue;
+        })
       ) {
         delete newCombination[key];
       }
